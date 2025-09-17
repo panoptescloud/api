@@ -8,14 +8,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func handleServe(cmd *cobra.Command, _ []string) error {
-	port, err := cmd.Flags().GetInt("port")
-	cobra.CheckErr(err)
-
+func handleServe(_ *cobra.Command, _ []string) error {
 	e := echo.New()
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
 
-	return e.Start(fmt.Sprintf(":%d", port))
+	return e.Start(fmt.Sprintf(":%d", appCfg.GetServerPort()))
 }
