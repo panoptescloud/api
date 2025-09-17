@@ -1,0 +1,5 @@
+# The url that will be used for exposing the mkdocs dev server
+DOCS_HOST=api-docs.panoptes.test
+
+# The url that will be used for exposing the API
+API_HOST=panoptes.test
