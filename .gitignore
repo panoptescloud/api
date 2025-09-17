@@ -1,3 +1,6 @@
 node_modules
 
 .dockerenv
+
+# Where we store binaries during dev build
+bin
