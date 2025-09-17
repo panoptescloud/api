@@ -1,0 +1,12 @@
+composeFiles:
+  primary: docker-compose.yml
+
+tlsCerts:
+  - 'panoptes.test'
+
+envFiles:
+- path: .dockerenv
+
+hosts:
+  - panoptes.test
+  - api-docs.panoptes.test
