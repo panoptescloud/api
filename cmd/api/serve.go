@@ -10,7 +10,7 @@ import (
 
 func handleServe(_ *cobra.Command, _ []string) error {
 	e := echo.New()
-	e.GET("/", func(c echo.Context) error {
+	e.GET("/api", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
 
