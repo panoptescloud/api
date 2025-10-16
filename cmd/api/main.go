@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log/slog"
 	"os"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 
 var appCfg *config.Config
 var cfgFilePath string
+var logger *slog.Logger
 
 var ErrInvalidOptions = errors.New("invalid options provided")
 
@@ -93,8 +95,30 @@ func loadConfig() {
 	cobra.CheckErr(err)
 }
 
+func configureLogger() {
+	l := slog.Level(slog.LevelInfo)
+	err := l.UnmarshalText([]byte(appCfg.Logging.Level))
+
+	cobra.CheckErr(err)
+
+	opts := &slog.HandlerOptions{
+		AddSource: true,
+		Level:     l,
+	}
+
+	if appCfg.Logging.Format == "text" {
+		logger = slog.New(slog.NewTextHandler(os.Stdout, opts))
+	} else {
+		logger = slog.New(slog.NewJSONHandler(os.Stdout, opts))
+	}
+
+	logger = logger.With(slog.String("service", "panoptes"))
+	slog.SetDefault(logger)
+}
+
 func bootstrap() {
 	loadConfig()
+	configureLogger()
 }
 
 func main() {

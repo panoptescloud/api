@@ -6,7 +6,7 @@ type ServerAccessLogsConfig struct {
 }
 
 type ServerConfig struct {
-	Port int
+	Port uint16
 	AccessLogs ServerAccessLogsConfig `yaml:"accessLogs" mapstructure:"access_logs"`
 }
 
@@ -20,7 +20,7 @@ type Config struct {
 	Logging LoggingConfig
 }
 
-func (c *Config) GetServerPort() int {
+func (c *Config) GetServerPort() uint16 {
 	return c.Server.Port
 }
 

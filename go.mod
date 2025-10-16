@@ -3,10 +3,12 @@ module github.com/panoptescloud/api
 go 1.25
 
 require (
+	github.com/danielgtaylor/huma/v2 v2.34.1
 	github.com/labstack/echo/v4 v4.13.4
 	github.com/magiconair/properties v1.8.10
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.21.0
+	go.yaml.in/yaml/v3 v3.0.4
 )
 
 require (
@@ -25,9 +27,9 @@ require (
 	github.com/subosito/gotenv v1.6.0 // indirect
 	github.com/valyala/bytebufferpool v1.0.0 // indirect
 	github.com/valyala/fasttemplate v1.2.2 // indirect
-	go.yaml.in/yaml/v3 v3.0.4 // indirect
 	golang.org/x/crypto v0.38.0 // indirect
 	golang.org/x/net v0.40.0 // indirect
 	golang.org/x/sys v0.33.0 // indirect
 	golang.org/x/text v0.28.0 // indirect
+	golang.org/x/time v0.11.0 // indirect
 )

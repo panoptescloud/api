@@ -1,18 +1,56 @@
 package main
 
 import (
-	"fmt"
-	"net/http"
+	"context"
+	"errors"
+	"os"
+	"os/signal"
+	"syscall"
+	"time"
 
-	"github.com/labstack/echo/v4"
+	stdhttp "net/http"
+
+	"github.com/panoptescloud/api/internal/api/http"
+	"github.com/panoptescloud/api/internal/api/http/v1beta"
 	"github.com/spf13/cobra"
 )
 
 func handleServe(_ *cobra.Command, _ []string) error {
-	e := echo.New()
-	e.GET("/api", func(c echo.Context) error {
-		return c.String(http.StatusOK, "Hello, World!")
-	})
+	api := http.NewServer(
+		uint16(appCfg.GetServerPort()),
+		logger.With("component", "http-server"),
+	)
 
-	return e.Start(fmt.Sprintf(":%d", appCfg.GetServerPort()))
+	controllers := []http.Controller{
+		v1beta.NewProbesController(),
+	}
+
+	serverErrors := make(chan error, 1)
+
+	go func() {
+		// Check for stdhttp.ErrServerClosed as this is what is returned when 
+		// shutdown is called, the start method should return this at that point,
+		// but it's not an error we actually want to handle, as it's part of our
+		// graceful shutdown.
+		if err := api.Start(controllers); err != nil && !errors.Is(err, stdhttp.ErrServerClosed) {
+			serverErrors <- err
+		}
+	}()
+
+	stop := make(chan os.Signal, 1)
+	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
+
+	select {
+	case <-stop:
+		// Fallthrough to code after this select, to initiate graceful shutdown
+	case err := <-serverErrors:
+		//	Something went wrong during startup
+		return err
+	}
+
+	// Create context for graceful shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	return api.Shutdown(ctx)
 }
