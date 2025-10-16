@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"encoding/json"
 	"io"
+	"log/slog"
 	"net/http"
 )
 
 type Client struct {
 	oauthClientId string
 	oauthSecret string
+	logger *slog.Logger
 }
 
 type oauthTokenRequest struct {
@@ -31,6 +33,8 @@ func (c *Client) GetToken(code string) (string, error) {
 		return "", err
 	}
 
+	c.logger.Debug("github oauth token request", "data", string(jsonData))
+
 	req, err := http.NewRequest("POST", "https://github.com/login/oauth/access_token", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return "", err
@@ -43,7 +47,6 @@ func (c *Client) GetToken(code string) (string, error) {
 	client := &http.Client{}
 	resp, err := client.Do(req)
 
-	
 	if err != nil {
 		return "", err
 	}
@@ -55,6 +58,8 @@ func (c *Client) GetToken(code string) (string, error) {
 	if err != nil {
 		return "", err
 	}
+
+	c.logger.Debug("github oauth token response", "body", string(body), "status-code", resp.StatusCode)
 
 	// Optional: decode into a struct
 	var tokenResponse struct {
@@ -69,9 +74,10 @@ func (c *Client) GetToken(code string) (string, error) {
 	return tokenResponse.AccessToken, nil
 }
 
-func NewClient(oauthClientId string, oauthSecret string) *Client {
+func NewClient(oauthClientId string, oauthSecret string, logger *slog.Logger) *Client {
 	return &Client{
 		oauthClientId: oauthClientId,
 		oauthSecret: oauthSecret,
+		logger: logger,
 	}
 }

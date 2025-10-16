@@ -7,12 +7,12 @@ type ServerAccessLogsConfig struct {
 
 type ServerConfig struct {
 	Port uint16
-	AccessLogs ServerAccessLogsConfig `yaml:"accessLogs" mapstructure:"access_logs"`
+	AccessLogs ServerAccessLogsConfig `yaml:"accessLogs"`
 }
 
 type GithubOauthConfig struct {
-	ClientId string `yaml:"clientId" mapstructure:"client_id"`
-	ClientSecret string `yaml:"clientSecret" mapstructure:"client_secret"`
+	ClientId string `yaml:"clientId"`
+	ClientSecret string `yaml:"clientSecret"`
 }
 
 type GithubConfig struct {
@@ -27,7 +27,7 @@ type LoggingConfig struct {
 type Config struct {
 	Server ServerConfig
 	Logging LoggingConfig
-	Github GithubConfig
+	Github GithubConfig `yaml:"github"`
 }
 
 func (c *Config) GetServerPort() uint16 {
@@ -68,7 +68,10 @@ func Default() *Config {
 			},
 		},
 		Github: GithubConfig{
-			Oauth: GithubOauthConfig{},
+			Oauth: GithubOauthConfig{
+				ClientId: "",
+				ClientSecret: "",
+			},
 		},
 		Logging: LoggingConfig{
 			Level: "error",
