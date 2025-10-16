@@ -4,3 +4,7 @@ node_modules
 
 # Where we store binaries during dev build
 bin
+
+# App config
+
+api.panoptes.yaml

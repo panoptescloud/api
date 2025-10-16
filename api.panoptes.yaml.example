@@ -1,3 +1,8 @@
 # Can be empty and just use defaults, but the file must be present for viper
 logging:
   level: "debug"
+
+github:
+  oauth:
+    clientId: "ADD ME"
+    clientSecret: "ADD ME"

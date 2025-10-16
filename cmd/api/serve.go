@@ -12,6 +12,7 @@ import (
 
 	"github.com/panoptescloud/api/internal/api/http"
 	"github.com/panoptescloud/api/internal/api/http/v1beta"
+	"github.com/panoptescloud/api/internal/auth/github_oauth"
 	"github.com/spf13/cobra"
 )
 
@@ -23,6 +24,9 @@ func handleServe(_ *cobra.Command, _ []string) error {
 
 	controllers := []http.Controller{
 		v1beta.NewProbesController(),
+		v1beta.NewAuthController(
+			github_oauth.NewClient(appCfg.GetGithubOauthClientId(), appCfg.GetGithubOauthClientSecret()),
+		),
 	}
 
 	serverErrors := make(chan error, 1)

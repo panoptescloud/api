@@ -10,6 +10,15 @@ type ServerConfig struct {
 	AccessLogs ServerAccessLogsConfig `yaml:"accessLogs" mapstructure:"access_logs"`
 }
 
+type GithubOauthConfig struct {
+	ClientId string `yaml:"clientId" mapstructure:"client_id"`
+	ClientSecret string `yaml:"clientSecret" mapstructure:"client_secret"`
+}
+
+type GithubConfig struct {
+	Oauth GithubOauthConfig `yaml:"oauth"`
+}
+
 type LoggingConfig struct {
 	Level string
 	Format string
@@ -18,6 +27,7 @@ type LoggingConfig struct {
 type Config struct {
 	Server ServerConfig
 	Logging LoggingConfig
+	Github GithubConfig
 }
 
 func (c *Config) GetServerPort() uint16 {
@@ -40,6 +50,14 @@ func (c *Config) LogLevel() string {
 	return c.Logging.Level
 }
 
+func (c *Config) GetGithubOauthClientId() string {
+	return c.Github.Oauth.ClientId
+}
+
+func (c *Config) GetGithubOauthClientSecret() string {
+	return c.Github.Oauth.ClientSecret
+}
+
 func Default() *Config {
 	return &Config{
 		Server: ServerConfig{
@@ -48,6 +66,9 @@ func Default() *Config {
 				Format: "json",
 				Enabled: true,
 			},
+		},
+		Github: GithubConfig{
+			Oauth: GithubOauthConfig{},
 		},
 		Logging: LoggingConfig{
 			Level: "error",
