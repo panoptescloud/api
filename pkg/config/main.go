@@ -1,17 +1,17 @@
 package config
 
 type ServerAccessLogsConfig struct {
-	Format string
+	Format  string
 	Enabled bool
 }
 
 type ServerConfig struct {
-	Port uint16
+	Port       uint16
 	AccessLogs ServerAccessLogsConfig `yaml:"accessLogs"`
 }
 
 type GithubOauthConfig struct {
-	ClientId string `yaml:"clientId"`
+	ClientId     string `yaml:"clientId"`
 	ClientSecret string `yaml:"clientSecret"`
 }
 
@@ -20,14 +20,14 @@ type GithubConfig struct {
 }
 
 type LoggingConfig struct {
-	Level string
+	Level  string
 	Format string
 }
 
 type Config struct {
-	Server ServerConfig
+	Server  ServerConfig
 	Logging LoggingConfig
-	Github GithubConfig `yaml:"github"`
+	Github  GithubConfig `yaml:"github"`
 }
 
 func (c *Config) GetServerPort() uint16 {
@@ -63,18 +63,18 @@ func Default() *Config {
 		Server: ServerConfig{
 			Port: 8080,
 			AccessLogs: ServerAccessLogsConfig{
-				Format: "json",
+				Format:  "json",
 				Enabled: true,
 			},
 		},
 		Github: GithubConfig{
 			Oauth: GithubOauthConfig{
-				ClientId: "",
+				ClientId:     "",
 				ClientSecret: "",
 			},
 		},
 		Logging: LoggingConfig{
-			Level: "error",
+			Level:  "error",
 			Format: "json",
 		},
 	}

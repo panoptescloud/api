@@ -121,10 +121,11 @@ func configureDefaultResponses(api *huma.OpenAPI, op *huma.Operation) {
 }
 
 type Server struct {
-	port uint16
-	echo *echo.Echo
+	port   uint16
+	echo   *echo.Echo
 	logger *slog.Logger
 }
+
 func (srv *Server) Start(controllers []Controller) error {
 	e := echo.New()
 
@@ -164,7 +165,7 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 
 func NewServer(port uint16, logger *slog.Logger) *Server {
 	return &Server{
-		port: port,
+		port:   port,
 		logger: logger,
 	}
 }

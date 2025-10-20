@@ -10,21 +10,21 @@ import (
 
 type Client struct {
 	oauthClientId string
-	oauthSecret string
-	logger *slog.Logger
+	oauthSecret   string
+	logger        *slog.Logger
 }
 
 type oauthTokenRequest struct {
-	ClientId string `json:"client_id"`
+	ClientId     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
-	Code string `json:"code"`
+	Code         string `json:"code"`
 }
 
 func (c *Client) GetToken(code string) (string, error) {
 	data := oauthTokenRequest{
-		ClientId: c.oauthClientId,
+		ClientId:     c.oauthClientId,
 		ClientSecret: c.oauthSecret,
-		Code: code,
+		Code:         code,
 	}
 
 	jsonData, err := json.Marshal(data)
@@ -77,7 +77,7 @@ func (c *Client) GetToken(code string) (string, error) {
 func NewClient(oauthClientId string, oauthSecret string, logger *slog.Logger) *Client {
 	return &Client{
 		oauthClientId: oauthClientId,
-		oauthSecret: oauthSecret,
-		logger: logger,
+		oauthSecret:   oauthSecret,
+		logger:        logger,
 	}
 }

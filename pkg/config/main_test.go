@@ -22,7 +22,7 @@ func Test_Defaults(t *testing.T) {
 
 // Ensures the getters are actually returning the relevant values from the config.
 // All values here are purposely different from eachother and the default config,
-// to ensure that the default config isn't working by some coincidence. E.g. the 
+// to ensure that the default config isn't working by some coincidence. E.g. the
 // format for access logs and app logs both default to JSON, if one returned the
 // value for the other, everything would look okay.
 func Test_GettersAreWorking(t *testing.T) {
@@ -30,12 +30,12 @@ func Test_GettersAreWorking(t *testing.T) {
 		Server: config.ServerConfig{
 			Port: 9999,
 			AccessLogs: config.ServerAccessLogsConfig{
-				Format: "text",
+				Format:  "text",
 				Enabled: false,
 			},
 		},
 		Logging: config.LoggingConfig{
-			Level: "warn",
+			Level:  "warn",
 			Format: "blah",
 		},
 	}

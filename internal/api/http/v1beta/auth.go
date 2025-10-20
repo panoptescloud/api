@@ -5,10 +5,11 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/panoptescloud/api/internal/users"
 )
 
-type githubOauthClient interface {
-	GetToken(code string) (string, error)
+type userHandlers interface {
+	SigninOrRegisterViaGithub(dto users.SignInOrRegisterViaGithubDTO) (users.SignInOrRegisterViaGithubResponse, error)
 }
 
 type GithubTokenRequest struct {
@@ -27,8 +28,8 @@ type GithubTokenResponse struct {
 	Body GithubTokenBody
 }
 
-type AuthController struct{
-	gh githubOauthClient
+type AuthController struct {
+	uh userHandlers
 }
 
 func (c *AuthController) RegisterRoutes(api huma.API, debugErrorsEnabled bool) {
@@ -41,15 +42,18 @@ func (c *AuthController) RegisterRoutes(api huma.API, debugErrorsEnabled bool) {
 	}, ErrorHandler(debugErrorsEnabled, c.GetGithubToken))
 }
 
-func NewAuthController(gh githubOauthClient ) *AuthController {
+func NewAuthController(uh userHandlers) *AuthController {
 	return &AuthController{
-		gh: gh,
+		uh: uh,
 	}
 }
 
-
 func (c *AuthController) GetGithubToken(ctx context.Context, req *GithubTokenRequest) (*GithubTokenResponse, error) {
-	token, err := c.gh.GetToken(req.Code)
+	resp, err := c.uh.SigninOrRegisterViaGithub(
+		users.SignInOrRegisterViaGithubDTO{
+			Code: req.Code,
+		},
+	)
 
 	if err != nil {
 		return nil, err
@@ -58,7 +62,7 @@ func (c *AuthController) GetGithubToken(ctx context.Context, req *GithubTokenReq
 	return &GithubTokenResponse{
 		Body: GithubTokenBody{
 			Data: GithubTokenData{
-				Token: token,
+				Token: resp.Token,
 			},
 		},
 	}, nil

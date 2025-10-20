@@ -26,7 +26,7 @@ var rootCmd = &cobra.Command{
 	Use:          "api",
 	Short:        "Panoptes API.",
 	SilenceUsage: true,
-	RunE: handleGroupedCommand,
+	RunE:         handleGroupedCommand,
 }
 
 var serveCmd = &cobra.Command{
@@ -36,16 +36,16 @@ var serveCmd = &cobra.Command{
 }
 
 var debugCmd = &cobra.Command{
-	Use: "debug",
+	Use:   "debug",
 	Short: "Commands to aid in debugging",
-	RunE: handleGroupedCommand,
+	RunE:  handleGroupedCommand,
 }
 
 var debugShowConfigCmd = &cobra.Command{
-	Use: "show-config",
+	Use:   "show-config",
 	Short: "Shows the currently loaded configuration.",
-	Long: `Includes any overrides provided by environent variabels or cli flags.`,
-	RunE: handleDebugShowConfig,
+	Long:  `Includes any overrides provided by environent variabels or cli flags.`,
+	RunE:  handleDebugShowConfig,
 }
 
 func init() {
@@ -58,7 +58,7 @@ func init() {
 	rootCmd.PersistentFlags().StringVar(&cfgFilePath, "config", defaultCfgFilePath, "Path to config file to use")
 	rootCmd.PersistentFlags().String("log-level", "error", "log level to use")
 	rootCmd.PersistentFlags().String("log-format", "json", "log format to use")
-	
+
 	serveCmd.Flags().Int("port", 8080, "The port to serve the API on")
 
 	rootCmd.AddCommand(serveCmd)
@@ -79,7 +79,6 @@ func loadConfig() {
 	viper.SetEnvPrefix("panoptes")
 	viper.AutomaticEnv()
 	viper.SetConfigFile(cfgFilePath)
-	
 
 	_, err := os.Stat(cfgFilePath)
 

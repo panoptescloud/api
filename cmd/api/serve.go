@@ -13,6 +13,7 @@ import (
 	"github.com/panoptescloud/api/internal/api/http"
 	"github.com/panoptescloud/api/internal/api/http/v1beta"
 	"github.com/panoptescloud/api/internal/auth/github_oauth"
+	"github.com/panoptescloud/api/internal/users"
 	"github.com/spf13/cobra"
 )
 
@@ -25,18 +26,25 @@ func handleServe(_ *cobra.Command, _ []string) error {
 	controllers := []http.Controller{
 		v1beta.NewProbesController(),
 		v1beta.NewAuthController(
-			github_oauth.NewClient(
-				appCfg.GetGithubOauthClientId(),
-				appCfg.GetGithubOauthClientSecret(),
-				logger.With("component", "github-oauth-client"),
+			users.NewUserHandlers(
+				github_oauth.NewClient(
+					appCfg.GetGithubOauthClientId(),
+					appCfg.GetGithubOauthClientSecret(),
+					logger.With("component", "github-oauth-client"),
+				),
 			),
+			// github_oauth.NewClient(
+			// 	appCfg.GetGithubOauthClientId(),
+			// 	appCfg.GetGithubOauthClientSecret(),
+			// 	logger.With("component", "github-oauth-client"),
+			// ),
 		),
 	}
 
 	serverErrors := make(chan error, 1)
 
 	go func() {
-		// Check for stdhttp.ErrServerClosed as this is what is returned when 
+		// Check for stdhttp.ErrServerClosed as this is what is returned when
 		// shutdown is called, the start method should return this at that point,
 		// but it's not an error we actually want to handle, as it's part of our
 		// graceful shutdown.
