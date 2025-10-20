@@ -5,8 +5,8 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/panoptescloud/api/internal/api/http/operations"
-	"github.com/panoptescloud/api/internal/api/http/v1beta/responses"
+	"github.com/panoptescloud/api/internal/application/api/http/operations"
+	"github.com/panoptescloud/api/internal/application/api/http/v1beta/responses"
 )
 
 type StartupRequest struct{}

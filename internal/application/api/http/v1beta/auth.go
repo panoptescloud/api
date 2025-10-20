@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/panoptescloud/api/internal/users"
+	"github.com/panoptescloud/api/internal/application/users"
 )
 
 type userHandlers interface {

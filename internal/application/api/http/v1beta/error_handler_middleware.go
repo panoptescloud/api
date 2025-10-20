@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
-	"github.com/panoptescloud/api/internal/validation"
+	"github.com/panoptescloud/api/internal/domain/validation"
 )
 
 func ErrorHandler[Req any, Resp any](debugErrors bool, handler func(context.Context, *Req) (*Resp, error)) func(ctx context.Context, req *Req) (*Resp, error) {

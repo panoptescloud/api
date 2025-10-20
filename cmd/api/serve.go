@@ -10,10 +10,10 @@ import (
 
 	stdhttp "net/http"
 
-	"github.com/panoptescloud/api/internal/api/http"
-	"github.com/panoptescloud/api/internal/api/http/v1beta"
-	"github.com/panoptescloud/api/internal/auth/github_oauth"
-	"github.com/panoptescloud/api/internal/users"
+	"github.com/panoptescloud/api/internal/application/api/http"
+	"github.com/panoptescloud/api/internal/application/api/http/v1beta"
+	"github.com/panoptescloud/api/internal/application/users"
+	"github.com/panoptescloud/api/internal/infra/github_oauth"
 	"github.com/spf13/cobra"
 )
 
@@ -33,11 +33,6 @@ func handleServe(_ *cobra.Command, _ []string) error {
 					logger.With("component", "github-oauth-client"),
 				),
 			),
-			// github_oauth.NewClient(
-			// 	appCfg.GetGithubOauthClientId(),
-			// 	appCfg.GetGithubOauthClientSecret(),
-			// 	logger.With("component", "github-oauth-client"),
-			// ),
 		),
 	}
 

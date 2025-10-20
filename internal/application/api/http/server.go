@@ -12,7 +12,7 @@ import (
 	"github.com/danielgtaylor/huma/v2/adapters/humaecho"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
-	"github.com/panoptescloud/api/internal/api/http/operations"
+	"github.com/panoptescloud/api/internal/application/api/http/operations"
 )
 
 type Controller interface {
