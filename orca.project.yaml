@@ -10,3 +10,14 @@ envFiles:
 hosts:
   - panoptes.test
   - api-docs.panoptes.test
+
+extensions:
+- name: "go:fmt"
+  service: "app"
+  command: "go fmt"
+  defaultArgs: [ "./..." ]
+
+- name: "go:test"
+  service: "app"
+  command: "./scripts/test.sh"
+  defaultArgs: [ "./..." ]
