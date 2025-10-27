@@ -3,3 +3,29 @@ DOCS_HOST=api-docs.panoptes.test
 
 # The url that will be used for exposing the API
 API_HOST=panoptes.test
+
+# --- DB ---
+PANOPTES_POSTGRES_ROOT_PASSWORD=iamroot
+PANOPTES_POSTGRES_ROOT_USER=root
+PANOPTES_POSTGRES_DB=panoptes
+PANOPTES_POSTGRES_SCHEMA=public
+PANOPTES_POSTGRES_APP_USER=panoptesapp
+PANOPTES_POSTGRES_APP_PASSWORD=iamapp
+PANOPTES_POSTGRES_MIGRATOR_USER=panoptesmigrator
+PANOPTES_POSTGRES_MIGRATOR_PASSWORD=iammigrator
+
+PANOPTES_POSTGRES_INIT_DIR=./etc/postgres/init.d
+
+PANOPTES_POSTGRES_HOST_PORT=5433
+PANOPTES_POSTGRES_PORT=5432
+
+# --- DB Migrations ---
+PANOPTES_MIGRATIONS_DIR=./etc/postgres/migrations
+PANOPTES_DB_MIGRATE_SCRIPT=./etc/postgres/migrate.sh
+
+# --- pgadmin ---
+PANOPTES_PGADMIN_HOST=pgadmin.panoptes.test
+PANOPTES_PGADMIN_PORT=80
+PANOPTES_PGADMIN_EMAIL=pgadmin@panoptes.test
+PANOPTES_PGADMIN_PASSWORD=iampgadmin
+PANOPTES_PGADMIN_SERVERS_FILEPATH=./.local/pgadmin/config/servers.json

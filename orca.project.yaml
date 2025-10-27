@@ -10,6 +10,7 @@ envFiles:
 hosts:
   - panoptes.test
   - api-docs.panoptes.test
+  - pgadmin.panoptes.test
 
 extensions:
 - name: "go:fmt"
@@ -21,3 +22,11 @@ extensions:
   service: "app"
   command: "./scripts/test.sh"
   defaultArgs: [ "./..." ]
+
+- name: "migrate:up"
+  service: "migrate"
+  command: "up"
+
+- name: "migrate:wipe"
+  service: "migrate"
+  command: "drop"
