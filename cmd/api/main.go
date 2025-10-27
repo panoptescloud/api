@@ -118,6 +118,7 @@ func configureLogger() {
 func bootstrap() {
 	loadConfig()
 	configureLogger()
+	buildCommandBus()
 }
 
 func main() {

@@ -1,21 +1,19 @@
 package users
 
-type SignInOrRegisterViaGithubDTO struct {
+type SignInOrRegisterViaGithub struct {
 	Code string
+}
+
+func (cmd SignInOrRegisterViaGithub) GetName() string {
+	return "users.sign_in_or_register.github"
 }
 
 type SignInOrRegisterViaGithubResponse struct {
 	Token string
 }
 
-func (uh *UserHandlers) SigninOrRegisterViaGithub(dto SignInOrRegisterViaGithubDTO) (SignInOrRegisterViaGithubResponse, error) {
-	token, err := uh.githubOauthClient.GetToken(dto.Code)
+func (uh *UserHandlers) SigninOrRegisterViaGithub(dto SignInOrRegisterViaGithub) error {
+	_, err := uh.githubOauthClient.GetToken(dto.Code)
 
-	if err != nil {
-		return SignInOrRegisterViaGithubResponse{}, err
-	}
-
-	return SignInOrRegisterViaGithubResponse{
-		Token: token,
-	}, nil
+	return err
 }

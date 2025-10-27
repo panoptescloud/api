@@ -5,12 +5,9 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/panoptescloud/api/internal/application/bus"
 	"github.com/panoptescloud/api/internal/application/users"
 )
-
-type userHandlers interface {
-	SigninOrRegisterViaGithub(dto users.SignInOrRegisterViaGithubDTO) (users.SignInOrRegisterViaGithubResponse, error)
-}
 
 type GithubTokenRequest struct {
 	Code string `query:"code" doc:"The code from a github oauth redirect." required:"true"`
@@ -29,7 +26,7 @@ type GithubTokenResponse struct {
 }
 
 type AuthController struct {
-	uh userHandlers
+	bus *bus.Bus
 }
 
 func (c *AuthController) RegisterRoutes(api huma.API, debugErrorsEnabled bool) {
@@ -37,32 +34,50 @@ func (c *AuthController) RegisterRoutes(api huma.API, debugErrorsEnabled bool) {
 		OperationID:   "v1.auth.github.token",
 		Method:        http.MethodGet,
 		Path:          "/auth/github/token",
-		Summary:       "Get a token from github oauth.",
+		Summary:       "Get an access token via github oauth.",
 		DefaultStatus: http.StatusOK,
 	}, ErrorHandler(debugErrorsEnabled, c.GetGithubToken))
 }
 
-func NewAuthController(uh userHandlers) *AuthController {
+func NewAuthController(b *bus.Bus) *AuthController {
 	return &AuthController{
-		uh: uh,
+		bus: b,
 	}
 }
 
+/*
+Thinking this should:
+- call github oauth client to get token (infra)
+- retrieve user info from github (infra)
+- create user if not exists (application)
+	-> use domain to create new user
+- generate jwt for user (application)
+- return token (application)
+*/
 func (c *AuthController) GetGithubToken(ctx context.Context, req *GithubTokenRequest) (*GithubTokenResponse, error) {
-	resp, err := c.uh.SigninOrRegisterViaGithub(
-		users.SignInOrRegisterViaGithubDTO{
-			Code: req.Code,
-		},
-	)
+	err := bus.Dispatch(c.bus, users.SignInOrRegisterViaGithub{
+		Code: req.Code,
+	})
 
 	if err != nil {
 		return nil, err
 	}
 
+
+	// resp, err := c.uh.SigninOrRegisterViaGithub(
+	// 	users.SignInOrRegisterViaGithub{
+	// 		Code: req.Code,
+	// 	},
+	// )
+
+	// if err != nil {
+	// 	return nil, err
+	// }
+
 	return &GithubTokenResponse{
 		Body: GithubTokenBody{
 			Data: GithubTokenData{
-				Token: resp.Token,
+				Token: "blah",
 			},
 		},
 	}, nil
