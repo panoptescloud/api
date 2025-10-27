@@ -6,23 +6,25 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/panoptescloud/api/internal/application/bus"
-	"github.com/panoptescloud/api/internal/application/users"
 )
-
-type GithubTokenRequest struct {
-	Code string `query:"code" doc:"The code from a github oauth redirect." required:"true"`
+type GithubLoginRequestBody struct {
+	Code string `json:"code" doc:"The code from a github oauth redirect." required:"true"`
 }
 
-type GithubTokenData struct {
+type GithubTokenRequest struct {
+	Body GithubLoginRequestBody
+}
+
+type GithubLoginResponseData struct {
 	Token string `json:"token"`
 }
 
-type GithubTokenBody struct {
-	Data GithubTokenData `json:"data"`
+type GithubLoginResponseBody struct {
+	Data GithubLoginResponseData `json:"data"`
 }
 
-type GithubTokenResponse struct {
-	Body GithubTokenBody
+type GithubLoginResponse struct {
+	Body GithubLoginResponseBody
 }
 
 type AuthController struct {
@@ -31,10 +33,10 @@ type AuthController struct {
 
 func (c *AuthController) RegisterRoutes(api huma.API, debugErrorsEnabled bool) {
 	huma.Register(api, huma.Operation{
-		OperationID:   "v1.auth.github.token",
-		Method:        http.MethodGet,
-		Path:          "/auth/github/token",
-		Summary:       "Get an access token via github oauth.",
+		OperationID:   "v1.auth.github.login",
+		Method:        http.MethodPost,
+		Path:          "/auth/github/login",
+		Summary:       "Login or create an account via github Oauth.",
 		DefaultStatus: http.StatusOK,
 	}, ErrorHandler(debugErrorsEnabled, c.GetGithubToken))
 }
@@ -54,14 +56,14 @@ Thinking this should:
 - generate jwt for user (application)
 - return token (application)
 */
-func (c *AuthController) GetGithubToken(ctx context.Context, req *GithubTokenRequest) (*GithubTokenResponse, error) {
-	err := bus.Dispatch(c.bus, users.SignInOrRegisterViaGithub{
-		Code: req.Code,
-	})
+func (c *AuthController) GetGithubToken(ctx context.Context, req *GithubTokenRequest) (*GithubLoginResponse, error) {
+	// err := bus.Dispatch(c.bus, users.SignInOrRegisterViaGithub{
+	// 	Code: req.Body.Code,
+	// })
 
-	if err != nil {
-		return nil, err
-	}
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 
 	// resp, err := c.uh.SigninOrRegisterViaGithub(
@@ -74,10 +76,10 @@ func (c *AuthController) GetGithubToken(ctx context.Context, req *GithubTokenReq
 	// 	return nil, err
 	// }
 
-	return &GithubTokenResponse{
-		Body: GithubTokenBody{
-			Data: GithubTokenData{
-				Token: "blah",
+	return &GithubLoginResponse{
+		Body: GithubLoginResponseBody{
+			Data: GithubLoginResponseData{
+				Token: req.Body.Code,
 			},
 		},
 	}, nil
