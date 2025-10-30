@@ -83,7 +83,7 @@ func (c *AuthController) LoginWithGithub(ctx context.Context, req *GithubLoginRe
 		return nil, err
 	}
 
-	if res != nil {
+	if res == nil {
 		// Create user, then generate token
 		return &GithubLoginResponse{
 			Body: GithubLoginResponseBody{
