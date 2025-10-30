@@ -2,9 +2,8 @@ package postgres
 
 import (
 	"context"
-	"database/sql"
-	"fmt"
 
+	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/panoptescloud/api/internal/domain/users"
 	"github.com/panoptescloud/api/internal/infra/repository/postgres/db"
@@ -19,9 +18,8 @@ func (u *UsersRepository) ByGithubNodeId(id string) (*users.User, error) {
 
 	dbUser, err := queries.GetUserByGithubUserNodeID(context.TODO(), id)
 
-	fmt.Printf("%#v", err)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			return nil, nil
 		}
 

@@ -8,6 +8,10 @@ type GithubIdentity struct {
 	nodeID GithubUserNodeId
 }
 
+func (gi *GithubIdentity) NodeID() GithubUserNodeId {
+	return gi.nodeID
+}
+
 func NewGithubIdentity(nodeID GithubUserNodeId) *GithubIdentity {
 	return &GithubIdentity{
 		nodeID: nodeID,
@@ -70,7 +74,7 @@ func HydrateUser(
 		}
 	}
 
-	uid, err := uuid.FromBytes([]byte(id))
+	uid, err := uuid.Parse(id)
 
 	if err != nil {
 		return nil, err
