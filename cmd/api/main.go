@@ -5,8 +5,12 @@ import (
 	"fmt"
 	"log/slog"
 	"os"
+	"reflect"
 	"strings"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/panoptescloud/api/internal/infra/github_oauth"
+	"github.com/panoptescloud/api/internal/infra/repository/postgres"
 	"github.com/panoptescloud/api/pkg/config"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -15,8 +19,55 @@ import (
 var appCfg *config.Config
 var cfgFilePath string
 var logger *slog.Logger
+var svcContainer *services = &services{}
 
 var ErrInvalidOptions = errors.New("invalid options provided")
+
+type services struct {
+	githubOauthClient *github_oauth.Client
+	postgresPool *pgxpool.Pool
+	usersRepo *postgres.UsersRepository
+}
+
+func (s *services) GetGituhbOauthClient() *github_oauth.Client {
+	if s.githubOauthClient != nil {
+		return s.githubOauthClient
+	}
+
+	s.githubOauthClient = github_oauth.NewClient(
+		appCfg.GetGithubOauthClientId(),
+		appCfg.GetGithubOauthClientSecret(),
+		logger.With("component", "github-oauth-client"),
+	)
+
+	return s.githubOauthClient
+}
+
+func (s *services) GetPostgresPool() *pgxpool.Pool {
+	if s.postgresPool != nil {
+		return s.postgresPool
+	}
+
+	pool, err := postgres.NewPool(&appCfg.DB.Postgres)
+
+	cobra.CheckErr(err)
+
+	s.postgresPool = pool
+
+	return s.postgresPool
+}
+
+func (s *services) GetUsersRepo() *postgres.UsersRepository {
+	if s.usersRepo != nil {
+		return s.usersRepo
+	}
+
+	s.usersRepo = postgres.NewUsersRepository(
+		s.GetPostgresPool(),
+	)
+
+	return s.usersRepo
+}
 
 func handleGroupedCommand(cmd *cobra.Command, args []string) error {
 	return cmd.Help()
@@ -71,11 +122,38 @@ func init() {
 	cobra.CheckErr(viper.BindPFlag("server.port", serveCmd.Flags().Lookup("port")))
 }
 
+// bindVipersEnvsFromStruct is a bit of a workaround for dodgy viper behaviour. 
+// One would assume that "AutomaticEnv" does this, but thats not actually very
+// automatic, and we still need to bind each env to the relevant key aparrently.
+// This does so by recursing through the config struct and binding each key.
+func bindVipersEnvsFromStruct(prefix string, t reflect.Type) {
+	for i := 0; i < t.NumField(); i++ {
+		field := t.Field(i)
+
+		// use yaml tag if present, otherwise field name
+		key := field.Tag.Get("yaml")
+		if key == "" {
+			key = strings.ToLower(field.Name)
+		}
+
+		if prefix != "" {
+			key = prefix + "." + key
+		}
+
+		if field.Type.Kind() == reflect.Struct {
+			bindVipersEnvsFromStruct(key, field.Type)
+		} else {
+			_ = viper.BindEnv(key)
+		}
+	}
+}
+
+
 func loadConfig() {
 	// Tell viper to replace . in nested path with underscores
 	// e.g. logging.level becomes LOGGING_LEVEL
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-
+	
 	viper.SetEnvPrefix("panoptes")
 	viper.AutomaticEnv()
 	viper.SetConfigFile(cfgFilePath)
@@ -87,6 +165,8 @@ func loadConfig() {
 
 	err = viper.ReadInConfig()
 	cobra.CheckErr(err)
+
+	bindVipersEnvsFromStruct("", reflect.TypeOf(config.Config{}))
 
 	appCfg = config.Default()
 

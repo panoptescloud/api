@@ -1,5 +1,15 @@
 package config
 
+type PostgresSSLMode string
+const (
+	PostgresSSLModeDisable PostgresSSLMode = "disable"
+	PostgresSSLModeAllow PostgresSSLMode = "allow"
+	PostgresSSLModePrefer PostgresSSLMode = "prefer"
+	PostgresSSLModeRequire PostgresSSLMode = "require"
+	PostgresSSLModeVerifyCA PostgresSSLMode = "verify-ca"
+	PostgresSSLModeVerifyFull PostgresSSLMode = "verify-full"
+)
+
 type ServerAccessLogsConfig struct {
 	Format  string
 	Enabled bool
@@ -24,10 +34,26 @@ type LoggingConfig struct {
 	Format string
 }
 
+type PostgresConfig struct {
+	Host string
+	Username string
+	Password string
+	Port uint16
+	DBName string `yaml:"dbName"`
+	MaxConnections int32 `yaml:"maxConnections"`
+	MinConnections int32 `yaml:"minConnections"`
+	SSLMode PostgresSSLMode `yaml:"sslMode"`
+}
+
+type DBConfig struct {
+	Postgres PostgresConfig `yaml:"postgres"`
+}
+
 type Config struct {
 	Server  ServerConfig
 	Logging LoggingConfig
 	Github  GithubConfig `yaml:"github"`
+	DB DBConfig `yaml:"db"`
 }
 
 func (c *Config) GetServerPort() uint16 {
@@ -76,6 +102,18 @@ func Default() *Config {
 		Logging: LoggingConfig{
 			Level:  "error",
 			Format: "json",
+		},
+		DB: DBConfig{
+			Postgres: PostgresConfig{
+				Host: "",
+				Username: "",
+				Password: "",
+				Port: 5432,
+				DBName: "panoptes",
+				MaxConnections: 10,
+				MinConnections: 3,
+				SSLMode: PostgresSSLModeRequire,
+			},
 		},
 	}
 }

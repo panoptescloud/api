@@ -3,7 +3,8 @@ package config_test
 import (
 	"testing"
 
-	"github.com/magiconair/properties/assert"
+	"github.com/stretchr/testify/assert"
+
 	"github.com/panoptescloud/api/pkg/config"
 )
 
@@ -13,11 +14,13 @@ import (
 func Test_Defaults(t *testing.T) {
 	cfg := config.Default()
 
-	assert.Equal(t, 8080, cfg.GetServerPort())
+	assert.Equal(t, uint16(8080), cfg.GetServerPort())
 	assert.Equal(t, true, cfg.ServerAccessLogsAreEnabled())
 	assert.Equal(t, "json", cfg.ServerAccessLogFormat())
 	assert.Equal(t, "json", cfg.LogFormat())
 	assert.Equal(t, "error", cfg.LogLevel())
+	assert.Equal(t, "", cfg.GetGithubOauthClientId())
+	assert.Equal(t, "", cfg.GetGithubOauthClientSecret())
 }
 
 // Ensures the getters are actually returning the relevant values from the config.
@@ -38,11 +41,31 @@ func Test_GettersAreWorking(t *testing.T) {
 			Level:  "warn",
 			Format: "blah",
 		},
+		Github: config.GithubConfig{
+			Oauth: config.GithubOauthConfig{
+				ClientId: "github_oauth_client_id",
+				ClientSecret: "github_oauth_client_secret",
+			},
+		},
+		DB: config.DBConfig{
+			Postgres: config.PostgresConfig{
+				Host: "postgres_host",
+				Username: "postgres_username",
+				Password: "postgres_password",
+				Port: 8746,
+				DBName: "postgres_db_name",
+				MaxConnections: 17,
+				MinConnections: 15,
+				SSLMode: config.PostgresSSLModeVerifyFull,
+			},
+		},
 	}
 
-	assert.Equal(t, 9999, cfg.GetServerPort())
+	assert.Equal(t, uint16(9999), cfg.GetServerPort())
 	assert.Equal(t, false, cfg.ServerAccessLogsAreEnabled())
 	assert.Equal(t, "text", cfg.ServerAccessLogFormat())
 	assert.Equal(t, "blah", cfg.LogFormat())
 	assert.Equal(t, "warn", cfg.LogLevel())
+	assert.Equal(t, "github_oauth_client_id", cfg.GetGithubOauthClientId())
+	assert.Equal(t, "github_oauth_client_secret", cfg.GetGithubOauthClientSecret())
 }

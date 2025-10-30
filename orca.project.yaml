@@ -18,6 +18,10 @@ extensions:
   command: "go fmt"
   defaultArgs: [ "./..." ]
 
+- name: "go:tidy"
+  service: "app"
+  command: "go mod tidy"
+
 - name: "go:test"
   service: "app"
   command: "./scripts/test.sh"
@@ -30,3 +34,9 @@ extensions:
 - name: "migrate:wipe"
   service: "migrate"
   command: "drop"
+
+- name: "sqlc"
+  service: "app"
+  command: "sqlc"
+  defaultArgs:
+    - generate

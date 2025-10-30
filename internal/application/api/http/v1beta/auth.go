@@ -6,12 +6,20 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/panoptescloud/api/internal/application/bus"
+	appusers "github.com/panoptescloud/api/internal/application/users"
+	"github.com/panoptescloud/api/internal/domain/users"
 )
+type githubOauthClient interface {
+	GetToken(code string) (string, error)
+	GetProfile(accessToken string) (users.GithubProfile, error)
+}
+
+
 type GithubLoginRequestBody struct {
 	Code string `json:"code" doc:"The code from a github oauth redirect." required:"true"`
 }
 
-type GithubTokenRequest struct {
+type GithubLoginRequest struct {
 	Body GithubLoginRequestBody
 }
 
@@ -29,6 +37,7 @@ type GithubLoginResponse struct {
 
 type AuthController struct {
 	bus *bus.Bus
+	githubOauthClient githubOauthClient
 }
 
 func (c *AuthController) RegisterRoutes(api huma.API, debugErrorsEnabled bool) {
@@ -38,12 +47,13 @@ func (c *AuthController) RegisterRoutes(api huma.API, debugErrorsEnabled bool) {
 		Path:          "/auth/github/login",
 		Summary:       "Login or create an account via github Oauth.",
 		DefaultStatus: http.StatusOK,
-	}, ErrorHandler(debugErrorsEnabled, c.GetGithubToken))
+	}, ErrorHandler(debugErrorsEnabled, c.LoginWithGithub))
 }
 
-func NewAuthController(b *bus.Bus) *AuthController {
+func NewAuthController(b *bus.Bus, githubOauthClient githubOauthClient) *AuthController {
 	return &AuthController{
 		bus: b,
+		githubOauthClient: githubOauthClient,
 	}
 }
 
@@ -56,26 +66,35 @@ Thinking this should:
 - generate jwt for user (application)
 - return token (application)
 */
-func (c *AuthController) GetGithubToken(ctx context.Context, req *GithubTokenRequest) (*GithubLoginResponse, error) {
-	// err := bus.Dispatch(c.bus, users.SignInOrRegisterViaGithub{
-	// 	Code: req.Body.Code,
-	// })
+func (c *AuthController) LoginWithGithub(ctx context.Context, req *GithubLoginRequest) (*GithubLoginResponse, error) {
+	token, err := c.githubOauthClient.GetToken(req.Body.Code)
 
-	// if err != nil {
-	// 	return nil, err
-	// }
+	if err != nil {
+		return nil, err
+	}
 
+	profile, err := c.githubOauthClient.GetProfile(token)
 
-	// resp, err := c.uh.SigninOrRegisterViaGithub(
-	// 	users.SignInOrRegisterViaGithub{
-	// 		Code: req.Code,
-	// 	},
-	// )
+	res, err := bus.RunQuery[appusers.GetUserByGithubNodeID, *users.User](c.bus, appusers.GetUserByGithubNodeID{
+		NodeID: profile.NodeID,
+	})
 
-	// if err != nil {
-	// 	return nil, err
-	// }
+	if err != nil {
+		return nil, err
+	}
 
+	if res != nil {
+		// Create user, then generate token
+		return &GithubLoginResponse{
+			Body: GithubLoginResponseBody{
+				Data: GithubLoginResponseData{
+					Token: "not found",
+				},
+			},
+		}, nil
+	}
+
+	// simply generate token
 	return &GithubLoginResponse{
 		Body: GithubLoginResponseBody{
 			Data: GithubLoginResponseData{

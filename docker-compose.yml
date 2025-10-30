@@ -10,6 +10,12 @@ services:
       # See .local/docker/watch.sh
       # This is the subcommand of the binary we wanna run
       APP_CMD: serve
+      POSTGRES_DSN: postgres://${PANOPTES_POSTGRES_MIGRATOR_USER}:${PANOPTES_POSTGRES_MIGRATOR_PASSWORD}@postgres:${PANOPTES_POSTGRES_PORT}/${PANOPTES_POSTGRES_DB}?search_path=${PANOPTES_POSTGRES_SCHEMA}&sslmode=disable
+      PANOPTES_DB_POSTGRES_USERNAME: ${PANOPTES_POSTGRES_APP_USER}
+      PANOPTES_DB_POSTGRES_HOST: postgres
+      PANOPTES_DB_POSTGRES_PASSWORD: ${PANOPTES_POSTGRES_APP_PASSWORD}
+      PANOPTES_DB_POSTGRES_DBNAME: ${PANOPTES_POSTGRES_DB}
+      PANOPTES_DB_POSTGRES_SSLMODE: 'disable'
     working_dir: /app
     volumes:
       - ".:/app"
