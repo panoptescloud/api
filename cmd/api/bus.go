@@ -12,14 +12,21 @@ func buildCommandBus() *bus.Bus {
 		return globalBus
 	}
 
-	userHandlers := users.NewUserHandlers(
-		svcContainer.GetGituhbOauthClient(),
-		svcContainer.GetUsersRepo(),
-	)
+
 
 	globalBus = bus.New()
 
-	bus.RegisterQuery(globalBus, userHandlers.GetUserByGithubNodeID)
+	// --- Users
+	userQueryHandler := users.NewUserQueryHandler(
+		svcContainer.GetUsersRepo(),
+	)
+
+	userCmdHandler := users.NewUserCmdHandler(
+		svcContainer.GetUsersRepo(),
+	)
+
+	bus.RegisterCommand(globalBus, userCmdHandler.CreateUser)
+	bus.RegisterQuery(globalBus, userQueryHandler.GetUserByGithubNodeID)
 
 	return globalBus
 }

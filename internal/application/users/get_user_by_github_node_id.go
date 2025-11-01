@@ -7,9 +7,9 @@ type GetUserByGithubNodeID struct {
 }
 
 func (cmd GetUserByGithubNodeID) GetName() string {
-	return "users.get_user_by_github_node_id"
+	return "users.query.get_user_by_github_node_id"
 }
 
-func (uh *UserHandlers) GetUserByGithubNodeID(dto GetUserByGithubNodeID) (*users.User, error) {
+func (uh *UserQueryHandler) GetUserByGithubNodeID(dto GetUserByGithubNodeID) (*users.User, error) {
 	return uh.userRepo.ByGithubNodeId(dto.NodeID)
 }

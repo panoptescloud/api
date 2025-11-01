@@ -99,6 +99,34 @@ func (c *Client) GetToken(code string) (string, error) {
 	return tokenResponse.AccessToken, nil
 }
 
+func (c *Client) getPrimaryEmail(ctx context.Context, ghClient *github.Client) (string, error) {
+    opt := &github.ListOptions{
+        Page:    1,
+        PerPage: 100,
+    }
+
+    for {
+        emails, resp, err := ghClient.Users.ListEmails(ctx, opt)
+        if err != nil {
+            return "", err
+        }
+
+        for _, e := range emails {
+            if e.GetPrimary() && e.GetVerified() {
+                return e.GetEmail(), nil
+            }
+        }
+
+        if resp.NextPage == 0 {
+            break
+        }
+        opt.Page = resp.NextPage
+    }
+
+    // No primary email found
+    return "", domain.ErrMustHaveVerfiiedEmailAddress{}
+}
+
 func (c *Client) GetProfile(accessToken string) (users.GithubProfile, error) {
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
@@ -109,7 +137,18 @@ func (c *Client) GetProfile(accessToken string) (users.GithubProfile, error) {
 	ghClient := github.NewClient(tc)
 
 	// empty string means "authenticated user"
-	user, _, err := ghClient.Users.Get(ctx, "")
+	user, resp, err := ghClient.Users.Get(ctx, "")
+
+	c.logger.Debug("github profile response", "user", user, "status-code", resp.StatusCode)
+
+	if err != nil {
+		return users.GithubProfile{}, err
+	}
+
+	// The email may not come back in the profile if the user doesn't share it
+	// publicly, we should be able to get it from the emails resource in the API
+	// though.
+	email, err := c.getPrimaryEmail(ctx, ghClient)
 
 	if err != nil {
 		return users.GithubProfile{}, err
@@ -117,8 +156,8 @@ func (c *Client) GetProfile(accessToken string) (users.GithubProfile, error) {
 
 	return users.GithubProfile{
 		NodeID: user.GetNodeID(),
-		Name:   user.GetName(),
-		Email:  user.GetEmail(),
+		Name:   user.GetLogin(),
+		Email:  email,
 	}, nil
 }
 

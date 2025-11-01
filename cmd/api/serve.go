@@ -31,6 +31,7 @@ func handleServe(_ *cobra.Command, _ []string) error {
 				appCfg.GetGithubOauthClientSecret(),
 				logger.With("component", "github-oauth-client"),
 			),
+			logger.With("component", "auth-controller.v1beta"),
 		),
 	}
 

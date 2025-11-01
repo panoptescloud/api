@@ -8,12 +8,12 @@ type GithubIdentity struct {
 	nodeID GithubUserNodeId
 }
 
-func (gi *GithubIdentity) NodeID() GithubUserNodeId {
+func (gi GithubIdentity) NodeID() GithubUserNodeId {
 	return gi.nodeID
 }
 
-func NewGithubIdentity(nodeID GithubUserNodeId) *GithubIdentity {
-	return &GithubIdentity{
+func NewGithubIdentity(nodeID GithubUserNodeId) GithubIdentity {
+	return GithubIdentity{
 		nodeID: nodeID,
 	}
 }
@@ -22,7 +22,7 @@ type User struct {
 	id UserID
 	name Name
 	email Email
-	githubIdentity *GithubIdentity
+	githubIdentity GithubIdentity
 }
 
 func (u *User) ID() UserID {
@@ -41,11 +41,11 @@ func (u *User) Email() Email {
 	return u.email
 }
 
-func (u *User) GithubIdentity() *GithubIdentity {
+func (u *User) GithubIdentity() GithubIdentity {
 	return u.githubIdentity
 }
 
-func NewUser(id UserID, name Name, email Email, githubIdentity *GithubIdentity) *User {
+func NewUser(id UserID, name Name, email Email, githubIdentity GithubIdentity) *User {
 	return &User{
 		id: id, 
 		name: name,
@@ -62,16 +62,12 @@ func HydrateUser(
 	id string,
 	name string,
 	email string,
-	githubIdentityNodeId *string,
+	githubIdentityNodeId string,
 ) (*User, error) {
-	var githubIdentity *GithubIdentity = nil
-
-	if githubIdentityNodeId != nil {
-		githubIdentity = &GithubIdentity{
-			nodeID: GithubUserNodeId{
-				value: *githubIdentityNodeId,
-			},
-		}
+	githubIdentity := GithubIdentity{
+		nodeID: GithubUserNodeId{
+			value: githubIdentityNodeId,
+		},
 	}
 
 	uid, err := uuid.Parse(id)

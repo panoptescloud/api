@@ -17,3 +17,9 @@ type ErrEmailAlreadyInUse struct {}
 func (err ErrEmailAlreadyInUse) Error() string {
 	return "the chosen email is already in use"
 }
+
+type ErrMustHaveVerfiiedEmailAddress struct {}
+
+func (err ErrMustHaveVerfiiedEmailAddress) Error() string {
+	return "the user must have a verified email address in the external oauth provider"
+}

@@ -9,7 +9,6 @@ import (
 	"github.com/panoptescloud/api/internal/domain"
 	"github.com/panoptescloud/api/internal/domain/users"
 	"github.com/panoptescloud/api/internal/infra/repository/postgres"
-	"github.com/panoptescloud/api/pkg/util/point"
 	"github.com/panoptescloud/api/tests/db/postgrestest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -123,7 +122,7 @@ func Test_UserRepository_Save_new_user(t *testing.T) {
 		"019a3f4d-978c-7e15-91ce-7dd2575485f5",
 		"josephus miller",
 		"josephus@starhelix.org.ceres",
-		point.To("some_node_id"),
+		"some_node_id",
 	)
 
 	require.Nil(t, err)
@@ -148,7 +147,7 @@ func Test_UserRepository_Save_upsert_user(t *testing.T) {
 		"019a3f4d-978c-7e15-91ce-7dd2575485f5",
 		"josephus miller",
 		"josephus@starhelix.org.ceres",
-		point.To("some_node_id"),
+		"some_node_id",
 	)
 
 	require.Nil(t, err)
@@ -167,7 +166,7 @@ func Test_UserRepository_Save_upsert_user(t *testing.T) {
 		"019a3f4d-978c-7e15-91ce-7dd2575485f5",
 		"amos burton",
 		"amos@thechurn.com",
-		point.To("other_node_id"),
+		"other_node_id",
 	)
 
 	require.Nil(t, err)
@@ -193,7 +192,7 @@ func Test_UserRepository_Save_duped_email(t *testing.T) {
 		"019a3f4d-978c-7e15-91ce-7dd2575485f5",
 		"josephus miller",
 		"josephus@starhelix.org.ceres",
-		point.To("some_node_id"),
+		"some_node_id",
 	)
 
 	require.Nil(t, err)
@@ -212,7 +211,7 @@ func Test_UserRepository_Save_duped_email(t *testing.T) {
 		"019a3f82-7506-762f-bf96-221096985582",
 		"joe miller",
 		"josephus@starhelix.org.ceres",
-		point.To("some_node_id"),
+		"some_node_id",
 	)
 
 	require.Nil(t, err)

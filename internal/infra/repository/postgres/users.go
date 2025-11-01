@@ -34,7 +34,7 @@ func (u *UsersRepository) ByGithubNodeId(id string) (*users.User, error) {
 		dbUser.ID.String(),
 		dbUser.Name,
 		dbUser.Email,
-		&dbUser.NodeID,
+		dbUser.NodeID,
 	)
 
 	if err != nil {

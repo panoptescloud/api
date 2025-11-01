@@ -2,6 +2,7 @@ package v1beta
 
 import (
 	"context"
+	"log/slog"
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
@@ -38,6 +39,7 @@ type GithubLoginResponse struct {
 type AuthController struct {
 	bus *bus.Bus
 	githubOauthClient githubOauthClient
+	logger *slog.Logger
 }
 
 func (c *AuthController) RegisterRoutes(api huma.API, debugErrorsEnabled bool) {
@@ -50,11 +52,43 @@ func (c *AuthController) RegisterRoutes(api huma.API, debugErrorsEnabled bool) {
 	}, ErrorHandler(debugErrorsEnabled, c.LoginWithGithub))
 }
 
-func NewAuthController(b *bus.Bus, githubOauthClient githubOauthClient) *AuthController {
+func NewAuthController(b *bus.Bus, githubOauthClient githubOauthClient, logger *slog.Logger) *AuthController {
 	return &AuthController{
 		bus: b,
 		githubOauthClient: githubOauthClient,
+		logger: logger,
 	}
+}
+
+func (c *AuthController) createAccountFromGithubProfile(profile users.GithubProfile) (*users.User, error) {
+	id, err := users.GenerateUserID()
+
+	if err != nil {
+		return nil, err
+	}
+
+	dto := appusers.CreateUser{
+		ID: id,
+		Email: profile.Email,
+		Name: profile.Name,
+		GithubNodeID: profile.NodeID,
+	}
+
+	c.logger.Debug("creating user", "dto", dto)
+
+	err = bus.Dispatch(c.bus, dto)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return bus.RunQuery[appusers.GetUserByGithubNodeID, *users.User](c.bus, appusers.GetUserByGithubNodeID{
+		NodeID: profile.NodeID,
+	})
+}
+
+func (c *AuthController) generateJWT(user *users.User) (string, error) {
+	return "blah", nil
 }
 
 /*
@@ -75,7 +109,11 @@ func (c *AuthController) LoginWithGithub(ctx context.Context, req *GithubLoginRe
 
 	profile, err := c.githubOauthClient.GetProfile(token)
 
-	res, err := bus.RunQuery[appusers.GetUserByGithubNodeID, *users.User](c.bus, appusers.GetUserByGithubNodeID{
+	if err != nil {
+		return nil, err
+	}
+
+	user, err := bus.RunQuery[appusers.GetUserByGithubNodeID, *users.User](c.bus, appusers.GetUserByGithubNodeID{
 		NodeID: profile.NodeID,
 	})
 
@@ -83,22 +121,21 @@ func (c *AuthController) LoginWithGithub(ctx context.Context, req *GithubLoginRe
 		return nil, err
 	}
 
-	if res == nil {
-		// Create user, then generate token
-		return &GithubLoginResponse{
-			Body: GithubLoginResponseBody{
-				Data: GithubLoginResponseData{
-					Token: "not found",
-				},
-			},
-		}, nil
+	if user == nil {
+		user, err = c.createAccountFromGithubProfile(profile)
+
+		if err != nil {
+			return nil, err
+		}
 	}
+
+	jwt, err := c.generateJWT(user)
 
 	// simply generate token
 	return &GithubLoginResponse{
 		Body: GithubLoginResponseBody{
 			Data: GithubLoginResponseData{
-				Token: req.Body.Code,
+				Token: jwt,
 			},
 		},
 	}, nil
