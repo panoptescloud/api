@@ -15,12 +15,6 @@ import (
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 )
 
-var (
-	// pool     *pgxpool.Pool
-	// dbURL    string
-)
-
-
 func SetupTestDB() (*tcpostgres.PostgresContainer, *pgxpool.Pool) {
 	ctx := context.Background()
 
@@ -57,48 +51,6 @@ func SetupTestDB() (*tcpostgres.PostgresContainer, *pgxpool.Pool) {
 
 	return container, pool
 }
-
-// func SetupTestDB(t *testing.T) *pgxpool.Pool {
-// 	t.Helper()
-
-// 	once.Do(func() {
-// 		ctx := context.Background()
-
-// 		dbName := "panoptes"
-// 		dbUser := "panoptes"
-// 		dbPassword := "iamtest"
-
-// 		postgresContainer, err := tcpostgres.Run(ctx,
-// 			// TODO: pass this as an env var
-// 			"timescale/timescaledb-ha:pg17",
-// 			tcpostgres.WithDatabase(dbName),
-// 			tcpostgres.WithUsername(dbUser),
-// 			tcpostgres.WithPassword(dbPassword),
-// 			tcpostgres.BasicWaitStrategies(),
-// 		)
-
-// 		if err != nil {
-// 			log.Fatalf("failed to start container: %v", err)
-// 		}
-// 		container = postgresContainer
-
-// 		dbURL, err = container.ConnectionString(ctx)
-// 		if err != nil {
-// 			log.Fatalf("failed to get connection string: %v", err)
-// 		}
-
-// 		pool, err = pgxpool.New(ctx, dbURL)
-// 		if err != nil {
-// 			log.Fatalf("failed to connect to db: %v", err)
-// 		}
-
-// 		if err := pool.Ping(ctx); err != nil {
-// 			log.Fatalf("failed to ping db: %v", err)
-// 		}
-// 	})
-
-// 	return pool
-// }
 
 func createIsolatedSchema(t *testing.T, pool *pgxpool.Pool) string {
 	t.Helper()

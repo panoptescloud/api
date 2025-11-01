@@ -16,6 +16,10 @@ func (id UserID) String() string {
 	return id.value.String()
 }
 
+func (id UserID) Bytes() []byte {
+	return id.value[:]
+}
+
 func GenerateUserID() (UserID, error) {
 	id, err := uuid.NewV7()
 

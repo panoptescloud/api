@@ -11,3 +11,9 @@ func (err ErrUnauthorised) Error() string {
 
 	return "the current user is not authorized to perform this action"
 }
+
+type ErrEmailAlreadyInUse struct {}
+
+func (err ErrEmailAlreadyInUse) Error() string {
+	return "the chosen email is already in use"
+}

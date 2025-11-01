@@ -41,3 +41,41 @@ func (q *Queries) GetUserByGithubUserNodeID(ctx context.Context, nodeID string) 
 	)
 	return i, err
 }
+
+const upsertGithubUser = `-- name: UpsertGithubUser :exec
+INSERT INTO github_users (user_id, node_id)
+VALUES ($1, $2)
+ON CONFLICT (user_id)
+DO UPDATE
+SET node_id = $2
+`
+
+type UpsertGithubUserParams struct {
+	UserID pgtype.UUID
+	NodeID string
+}
+
+func (q *Queries) UpsertGithubUser(ctx context.Context, arg UpsertGithubUserParams) error {
+	_, err := q.db.Exec(ctx, upsertGithubUser, arg.UserID, arg.NodeID)
+	return err
+}
+
+const upsertUser = `-- name: UpsertUser :exec
+INSERT INTO users (id, email, name)
+VALUES ($1, $2, $3)
+ON CONFLICT (id)
+DO UPDATE
+SET email = $2,
+    name = $3
+`
+
+type UpsertUserParams struct {
+	ID    pgtype.UUID
+	Email string
+	Name  string
+}
+
+func (q *Queries) UpsertUser(ctx context.Context, arg UpsertUserParams) error {
+	_, err := q.db.Exec(ctx, upsertUser, arg.ID, arg.Email, arg.Name)
+	return err
+}
