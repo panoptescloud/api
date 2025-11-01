@@ -6,6 +6,8 @@ import (
 	"net/http"
 
 	"github.com/danielgtaylor/huma/v2"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/panoptescloud/api/internal/application/api/http/operations"
 	"github.com/panoptescloud/api/internal/application/bus"
 	appusers "github.com/panoptescloud/api/internal/application/users"
 	"github.com/panoptescloud/api/internal/domain/users"
@@ -15,6 +17,10 @@ type githubOauthClient interface {
 	GetProfile(accessToken string) (users.GithubProfile, error)
 }
 
+type jwtService interface {
+	Verify(tokenString string) (*jwt.Token, error)
+	Generate(subject string, name string) (string, error)
+}
 
 type GithubLoginRequestBody struct {
 	Code string `json:"code" doc:"The code from a github oauth redirect." required:"true"`
@@ -40,6 +46,7 @@ type AuthController struct {
 	bus *bus.Bus
 	githubOauthClient githubOauthClient
 	logger *slog.Logger
+	jwtService jwtService
 }
 
 func (c *AuthController) RegisterRoutes(api huma.API, debugErrorsEnabled bool) {
@@ -49,14 +56,20 @@ func (c *AuthController) RegisterRoutes(api huma.API, debugErrorsEnabled bool) {
 		Path:          "/auth/github/login",
 		Summary:       "Login or create an account via github Oauth.",
 		DefaultStatus: http.StatusOK,
+		// TODO: figure out which statuses should return here and implement them
+		Metadata: map[string]any{
+			operations.OptDisableAuthentication: true,
+			operations.OptDisableAllDefaults: true,
+		},
 	}, ErrorHandler(debugErrorsEnabled, c.LoginWithGithub))
 }
 
-func NewAuthController(b *bus.Bus, githubOauthClient githubOauthClient, logger *slog.Logger) *AuthController {
+func NewAuthController(b *bus.Bus, githubOauthClient githubOauthClient, jwtService jwtService, logger *slog.Logger) *AuthController {
 	return &AuthController{
 		bus: b,
 		githubOauthClient: githubOauthClient,
 		logger: logger,
+		jwtService: jwtService,
 	}
 }
 
@@ -129,7 +142,11 @@ func (c *AuthController) LoginWithGithub(ctx context.Context, req *GithubLoginRe
 		}
 	}
 
-	jwt, err := c.generateJWT(user)
+	jwt, err := c.jwtService.Generate(user.ID().String(), user.Name().String())
+
+	if err != nil {
+		return nil, err
+	}
 
 	// simply generate token
 	return &GithubLoginResponse{

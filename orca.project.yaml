@@ -40,3 +40,7 @@ extensions:
   command: "sqlc"
   defaultArgs:
     - generate
+
+- name: "jwt:gen-keys"
+  service: "jwt-keygen"
+  command: "/gen_rsa.sh"

@@ -49,11 +49,21 @@ type DBConfig struct {
 	Postgres PostgresConfig `yaml:"postgres"`
 }
 
+type JWTConfig struct {
+	PrivateKeyFile string `yaml:"privateKeyFile"`
+	PublicKeyFile string `yaml:"publicKeyFile"`
+}
+
+type AuthConfig struct {
+	JWT JWTConfig `yaml:"jwt"`
+}
+
 type Config struct {
 	Server  ServerConfig
 	Logging LoggingConfig
 	Github  GithubConfig `yaml:"github"`
 	DB DBConfig `yaml:"db"`
+	Auth AuthConfig `yaml:"auth"`
 }
 
 func (c *Config) GetServerPort() uint16 {
@@ -82,6 +92,15 @@ func (c *Config) GetGithubOauthClientId() string {
 
 func (c *Config) GetGithubOauthClientSecret() string {
 	return c.Github.Oauth.ClientSecret
+}
+
+
+func (c *Config) GetAuthJWTPublicKeyPath() string {
+	return c.Auth.JWT.PublicKeyFile
+}
+
+func (c *Config) GetAuthJWTPrivateKeyPath() string {
+	return c.Auth.JWT.PrivateKeyFile
 }
 
 func Default() *Config {
@@ -113,6 +132,11 @@ func Default() *Config {
 				MaxConnections: 10,
 				MinConnections: 3,
 				SSLMode: PostgresSSLModeRequire,
+			},
+		},
+		Auth: AuthConfig{
+			JWT: JWTConfig{
+
 			},
 		},
 	}

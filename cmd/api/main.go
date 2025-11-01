@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/panoptescloud/api/internal/application/api/http"
 	"github.com/panoptescloud/api/internal/infra/github_oauth"
 	"github.com/panoptescloud/api/internal/infra/repository/postgres"
 	"github.com/panoptescloud/api/pkg/config"
@@ -27,6 +28,7 @@ type services struct {
 	githubOauthClient *github_oauth.Client
 	postgresPool *pgxpool.Pool
 	usersRepo *postgres.UsersRepository
+	jwtService *http.JWTService
 }
 
 func (s *services) GetGituhbOauthClient() *github_oauth.Client {
@@ -67,6 +69,23 @@ func (s *services) GetUsersRepo() *postgres.UsersRepository {
 	)
 
 	return s.usersRepo
+}
+
+func (s *services) GetJWTService() *http.JWTService {
+	if s.jwtService != nil {
+		return s.jwtService
+	}
+
+	svc, err := http.NewJWTService(
+		appCfg.GetAuthJWTPrivateKeyPath(),
+		appCfg.GetAuthJWTPublicKeyPath(),
+	)
+
+	cobra.CheckErr(err)
+
+	s.jwtService = svc
+
+	return s.jwtService
 }
 
 func handleGroupedCommand(cmd *cobra.Command, args []string) error {

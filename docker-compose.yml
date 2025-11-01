@@ -91,6 +91,18 @@ services:
       - "traefik.http.services.api-mkdocs.loadbalancer.server.port=8000"
       - "traefik.http.routers.api-mkdocs.tls=true"
 
+  jwt-keygen:
+    profiles:
+      - manual
+    image: alpine/openssl:3.5.4
+    volumes:
+      - ./scripts/gen_rsa.sh:/gen_rsa.sh
+      - ./scripts/generic_entrypoint.sh:/generic_entrypoint.sh
+      - ./.local/jwt/keys:/target
+    entrypoint: /generic_entrypoint.sh
+    working_dir: /target
+
+
 
 volumes:
   # Persistent storage for postgres

@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"slices"
 	"strconv"
+	"strings"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humaecho"
@@ -120,10 +121,34 @@ func configureDefaultResponses(api *huma.OpenAPI, op *huma.Operation) {
 	addNotFoundResponse(op)
 }
 
+func configureDefaultSecurityRequirements(api *huma.OpenAPI, op *huma.Operation) {
+	// If this is set in metadata we don't need any auth on that endpoint.
+	if _, ok := op.Metadata[operations.OptDisableAuthentication]; ok {
+		return
+	}
+
+	schemeName := "bearer"
+
+	if len(op.Security) == 0 {
+		op.Security = []map[string][]string{
+			{schemeName: []string{}},
+		}
+		return
+	}
+
+	// iterate existing requirements
+	for i, req := range op.Security {
+		if _, ok := req[schemeName]; ! ok {
+			op.Security[i][schemeName] = []string{}
+		}
+	}
+}
+
 type Server struct {
-	port   uint16
-	echo   *echo.Echo
-	logger *slog.Logger
+	port       uint16
+	echo       *echo.Echo
+	logger     *slog.Logger
+	jwtService *JWTService
 }
 
 func (srv *Server) Start(controllers []Controller) error {
@@ -137,9 +162,45 @@ func (srv *Server) Start(controllers []Controller) error {
 	apiBase := "/api/v1beta"
 	api := e.Group(apiBase)
 	apiCfg := huma.DefaultConfig("Panoptes", "v1beta")
-	hg := humaecho.NewWithGroup(e, api, apiCfg)
+	apiCfg.Components.SecuritySchemes = map[string]*huma.SecurityScheme{
+		// Example Authorization Code flow.
+		// "bearer": {
+		// 	Type: "oauth2",
+		// 	Flows: &huma.OAuthFlows{
+		// 		AuthorizationCode: &huma.OAuthFlow{
+		// 			AuthorizationURL: "https://example.com/oauth/authorize",
+		// 			TokenURL:         "https://example.com/oauth/token",
+		// 			Scopes: map[string]string{
+		// 				"scope1": "Scope 1 description...",
+		// 				"scope2": "Scope 2 description...",
+		// 			},
+		// 		},
+		// 	},
+		// },
 
-	hg.OpenAPI().OnAddOperation = append(hg.OpenAPI().OnAddOperation, configureDefaultResponses)
+		// Example alternative describing the use of JWTs without documenting how
+		// they are issued or which flows might be supported. This is simpler but
+		// tells clients less information. Look at the above and see if we can get
+		// that working with how we get the code from github on our frontend.
+		"bearer": {
+			Type:         "http",
+			Scheme:       "bearer",
+			BearerFormat: "JWT",
+			In:           "header",
+		},
+	}
+	hg := humaecho.NewWithGroup(e, api, apiCfg)
+	hg.UseMiddleware(NewAuthMiddleware(hg, srv.jwtService))
+
+	hg.OpenAPI().OnAddOperation = append(
+		hg.OpenAPI().OnAddOperation, 
+		// Note, this should come before default responses, as we may want to use
+		// the security requirements to configure extra responses based on whether
+		// authentication is required.
+		configureDefaultSecurityRequirements,
+		configureDefaultResponses,
+	)
+
 	// Needed to get the docs displaying properly.
 	apiCfg.OpenAPI.Servers = []*huma.Server{
 		{
@@ -163,9 +224,37 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 	return srv.echo.Shutdown(ctx)
 }
 
-func NewServer(port uint16, logger *slog.Logger) *Server {
+func NewAuthMiddleware(api huma.API, jwtService *JWTService) func(ctx huma.Context, next func(huma.Context)) {
+	return func(ctx huma.Context, next func(huma.Context)) {
+
+		isAuthorizationRequired := len(ctx.Operation().Security) > 0
+
+		if !isAuthorizationRequired {
+			next(ctx)
+			return
+		}
+
+		tokenValue := strings.TrimPrefix(ctx.Header("Authorization"), "Bearer ")
+		if len(tokenValue) == 0 {
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "Unauthorized")
+			return
+		}
+
+		_, err := jwtService.Verify(tokenValue)
+
+		if err != nil {
+			huma.WriteErr(api, ctx, http.StatusUnauthorized, "Unauthorized")
+			return
+		}
+	
+		next(ctx)
+	}
+}
+
+func NewServer(port uint16, jwtService *JWTService, logger *slog.Logger) *Server {
 	return &Server{
-		port:   port,
-		logger: logger,
+		port:       port,
+		logger:     logger,
+		jwtService: jwtService,
 	}
 }
