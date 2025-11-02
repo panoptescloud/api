@@ -56,6 +56,7 @@ type JWTConfig struct {
 
 type AuthConfig struct {
 	JWT JWTConfig `yaml:"jwt"`
+	HMACKey string `yaml:"hmacKey"`
 }
 
 type Config struct {
@@ -103,6 +104,10 @@ func (c *Config) GetAuthJWTPrivateKeyPath() string {
 	return c.Auth.JWT.PrivateKeyFile
 }
 
+func (c *Config) GetAuthHMACKey() string {
+	return c.Auth.HMACKey
+}
+
 func Default() *Config {
 	return &Config{
 		Server: ServerConfig{
@@ -138,6 +143,7 @@ func Default() *Config {
 			JWT: JWTConfig{
 
 			},
+			HMACKey: "",
 		},
 	}
 }

@@ -97,6 +97,7 @@ services:
     image: alpine/openssl:3.5.4
     volumes:
       - ./scripts/gen_rsa.sh:/gen_rsa.sh
+      - ./scripts/gen_secret_key.sh:/gen_secret_key.sh
       - ./scripts/generic_entrypoint.sh:/generic_entrypoint.sh
       - ./.local/jwt/keys:/target
     entrypoint: /generic_entrypoint.sh

@@ -25,3 +25,6 @@ auth:
     # TODO: add to docs and startup scripts 
     privateKeyFile: /app/.local/jwt/keys/private.key
     publicKeyFile: /app/.local/jwt/keys/private.key
+
+    # Run `orca ext jwt:gen-random-secret` to generate this
+    hmacKey: ""

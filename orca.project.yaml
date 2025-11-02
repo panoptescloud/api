@@ -44,3 +44,7 @@ extensions:
 - name: "jwt:gen-keys"
   service: "jwt-keygen"
   command: "/gen_rsa.sh"
+
+- name: "jwt:gen-random-secret"
+  service: "jwt-keygen"
+  command: "/gen_secret_key.sh"

@@ -20,6 +20,10 @@ func (id UserID) Bytes() []byte {
 	return id.value[:]
 }
 
+func (id UserID) WrappedUuid() uuid.UUID {
+	return id.value
+}
+
 func GenerateUserID() (UserID, error) {
 	id, err := uuid.NewV7()
 
@@ -33,7 +37,7 @@ func GenerateUserID() (UserID, error) {
 }
 
 func NewUserID(v string) (UserID, error) {
-	id, err := uuid.FromBytes([]byte(v))
+	id, err := uuid.Parse(v)
 
 	if err != nil {
 		return UserID{}, err

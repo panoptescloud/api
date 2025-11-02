@@ -17,9 +17,10 @@ type githubOauthClient interface {
 	GetProfile(accessToken string) (users.GithubProfile, error)
 }
 
-type jwtService interface {
-	Verify(tokenString string) (*jwt.Token, error)
-	Generate(subject string, name string) (string, error)
+type authTokenManager interface {
+	VerifyJWT(tokenString string) (*jwt.Token, error)
+	GenerateJWT(userID users.UserID, name string) (string, error)
+	RefreshJWT(tokenString string) (string, error)
 }
 
 type GithubLoginRequestBody struct {
@@ -30,23 +31,23 @@ type GithubLoginRequest struct {
 	Body GithubLoginRequestBody
 }
 
-type GithubLoginResponseData struct {
+type JWTResponseData struct {
 	Token string `json:"token"`
 }
 
-type GithubLoginResponseBody struct {
-	Data GithubLoginResponseData `json:"data"`
+type JWTResponseBody struct {
+	Data JWTResponseData `json:"data"`
 }
 
-type GithubLoginResponse struct {
-	Body GithubLoginResponseBody
+type JWTResponse struct {
+	Body JWTResponseBody
 }
 
 type AuthController struct {
 	bus *bus.Bus
 	githubOauthClient githubOauthClient
 	logger *slog.Logger
-	jwtService jwtService
+	authTokenManager authTokenManager
 }
 
 func (c *AuthController) RegisterRoutes(api huma.API, debugErrorsEnabled bool) {
@@ -65,14 +66,30 @@ func (c *AuthController) RegisterRoutes(api huma.API, debugErrorsEnabled bool) {
 			operations.OptDisableAllDefaults: true,
 		},
 	}, ErrorHandler(debugErrorsEnabled, c.LoginWithGithub))
+
+	huma.Register(api, huma.Operation{
+		OperationID:   "v1.auth.refresh",
+		Method:        http.MethodPost,
+		Path:          "/auth/tokens/refresh",
+		Summary:       "Refresh a JWT token",
+		Tags: []string{
+			"Authentication",
+		},
+		DefaultStatus: http.StatusOK,
+		// TODO: figure out which statuses should return here and implement them
+		Metadata: map[string]any{
+			operations.OptDisableAllDefaults: true,
+			operations.OptDisableAuthentication: true,
+		},
+	}, ErrorHandler(debugErrorsEnabled, c.Refresh))
 }
 
-func NewAuthController(b *bus.Bus, githubOauthClient githubOauthClient, jwtService jwtService, logger *slog.Logger) *AuthController {
+func NewAuthController(b *bus.Bus, githubOauthClient githubOauthClient, authTokenManager authTokenManager, logger *slog.Logger) *AuthController {
 	return &AuthController{
 		bus: b,
 		githubOauthClient: githubOauthClient,
 		logger: logger,
-		jwtService: jwtService,
+		authTokenManager: authTokenManager,
 	}
 }
 
@@ -103,10 +120,6 @@ func (c *AuthController) createAccountFromGithubProfile(profile users.GithubProf
 	})
 }
 
-func (c *AuthController) generateJWT(user *users.User) (string, error) {
-	return "blah", nil
-}
-
 /*
 Thinking this should:
 - call github oauth client to get token (infra)
@@ -116,7 +129,7 @@ Thinking this should:
 - generate jwt for user (application)
 - return token (application)
 */
-func (c *AuthController) LoginWithGithub(ctx context.Context, req *GithubLoginRequest) (*GithubLoginResponse, error) {
+func (c *AuthController) LoginWithGithub(ctx context.Context, req *GithubLoginRequest) (*JWTResponse, error) {
 	token, err := c.githubOauthClient.GetToken(req.Body.Code)
 
 	if err != nil {
@@ -145,17 +158,41 @@ func (c *AuthController) LoginWithGithub(ctx context.Context, req *GithubLoginRe
 		}
 	}
 
-	jwt, err := c.jwtService.Generate(user.ID().String(), user.Name().String())
+	jwt, err := c.authTokenManager.GenerateJWT(user.ID(), user.Name().String())
 
 	if err != nil {
 		return nil, err
 	}
 
 	// simply generate token
-	return &GithubLoginResponse{
-		Body: GithubLoginResponseBody{
-			Data: GithubLoginResponseData{
+	return &JWTResponse{
+		Body: JWTResponseBody{
+			Data: JWTResponseData{
 				Token: jwt,
+			},
+		},
+	}, nil
+}
+
+type RefreshRequestBody struct {
+	RefreshToken string `json:"refresh_token" doc:"The token that will be refreshed." required:"true"`
+}
+
+type RefreshRequest struct {
+	Body RefreshRequestBody
+}
+
+func (c *AuthController) Refresh(ctx context.Context, req *RefreshRequest) (*JWTResponse, error) {
+	token, err := c.authTokenManager.RefreshJWT(req.Body.RefreshToken)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &JWTResponse{
+		Body: JWTResponseBody{
+			Data: JWTResponseData{
+				Token: token,
 			},
 		},
 	}, nil

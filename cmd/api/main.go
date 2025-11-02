@@ -9,8 +9,9 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/panoptescloud/api/internal/application/api/http"
+	"github.com/panoptescloud/api/internal/application/auth"
 	"github.com/panoptescloud/api/internal/infra/github_oauth"
+	"github.com/panoptescloud/api/internal/infra/hasher"
 	"github.com/panoptescloud/api/internal/infra/repository/postgres"
 	"github.com/panoptescloud/api/pkg/config"
 	"github.com/spf13/cobra"
@@ -28,7 +29,9 @@ type services struct {
 	githubOauthClient *github_oauth.Client
 	postgresPool *pgxpool.Pool
 	usersRepo *postgres.UsersRepository
-	jwtService *http.JWTService
+	authTokenManager *auth.TokenManager
+	refreshTokensRepo *postgres.RefreshTokensRepository
+	hasher *hasher.HMACSHA256Hasher
 }
 
 func (s *services) GetGituhbOauthClient() *github_oauth.Client {
@@ -71,21 +74,47 @@ func (s *services) GetUsersRepo() *postgres.UsersRepository {
 	return s.usersRepo
 }
 
-func (s *services) GetJWTService() *http.JWTService {
-	if s.jwtService != nil {
-		return s.jwtService
+func (s *services) GetRefreshTokensRepo() *postgres.RefreshTokensRepository {
+	if s.refreshTokensRepo != nil {
+		return s.refreshTokensRepo
 	}
 
-	svc, err := http.NewJWTService(
+	s.refreshTokensRepo = postgres.NewRefreshTokensRepository(
+		s.GetPostgresPool(),
+	)
+
+	return s.refreshTokensRepo
+}
+
+func (s *services) GetHasher() *hasher.HMACSHA256Hasher {
+	if s.hasher != nil {
+		return s.hasher
+	}
+
+	s.hasher = hasher.NewHMACSHA256Hasher(
+		[]byte(appCfg.GetAuthHMACKey()),
+	)
+
+	return s.hasher
+}
+
+func (s *services) GetAuthTokenManager() *auth.TokenManager {
+	if s.authTokenManager != nil {
+		return s.authTokenManager
+	}
+
+	svc, err := auth.NewTokenManager(
+		s.GetRefreshTokensRepo(),
+		s.GetHasher(),
 		appCfg.GetAuthJWTPrivateKeyPath(),
 		appCfg.GetAuthJWTPublicKeyPath(),
 	)
 
 	cobra.CheckErr(err)
 
-	s.jwtService = svc
+	s.authTokenManager = svc
 
-	return s.jwtService
+	return s.authTokenManager
 }
 
 func handleGroupedCommand(cmd *cobra.Command, args []string) error {

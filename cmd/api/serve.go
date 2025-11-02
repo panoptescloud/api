@@ -19,7 +19,7 @@ import (
 func handleServe(_ *cobra.Command, _ []string) error {
 	api := http.NewServer(
 		uint16(appCfg.GetServerPort()),
-		svcContainer.GetJWTService(),
+		svcContainer.GetAuthTokenManager(),
 		logger.With("component", "http-server"),
 	)
 
@@ -32,7 +32,7 @@ func handleServe(_ *cobra.Command, _ []string) error {
 				appCfg.GetGithubOauthClientSecret(),
 				logger.With("component", "github-oauth-client"),
 			),
-			svcContainer.GetJWTService(),
+			svcContainer.GetAuthTokenManager(),
 			logger.With("component", "auth-controller.v1beta"),
 		),
 	}

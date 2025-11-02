@@ -11,10 +11,17 @@ import (
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humaecho"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/panoptescloud/api/internal/application/api/http/operations"
+	"github.com/panoptescloud/api/internal/domain/users"
 )
+
+type authTokenManager interface {
+	VerifyJWT(tokenString string) (*jwt.Token, error)
+	GenerateJWT(userID users.UserID, name string) (string, error)
+}
 
 type Controller interface {
 	RegisterRoutes(g huma.API, debugErrorsEnabled bool)
@@ -148,7 +155,7 @@ type Server struct {
 	port       uint16
 	echo       *echo.Echo
 	logger     *slog.Logger
-	jwtService *JWTService
+	authTokenManager authTokenManager
 }
 
 func (srv *Server) Start(controllers []Controller) error {
@@ -190,7 +197,7 @@ func (srv *Server) Start(controllers []Controller) error {
 		},
 	}
 	hg := humaecho.NewWithGroup(e, api, apiCfg)
-	hg.UseMiddleware(NewAuthMiddleware(hg, srv.jwtService))
+	hg.UseMiddleware(NewAuthMiddleware(hg, srv.authTokenManager))
 
 	hg.OpenAPI().OnAddOperation = append(
 		hg.OpenAPI().OnAddOperation, 
@@ -224,7 +231,7 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 	return srv.echo.Shutdown(ctx)
 }
 
-func NewAuthMiddleware(api huma.API, jwtService *JWTService) func(ctx huma.Context, next func(huma.Context)) {
+func NewAuthMiddleware(api huma.API, jwtService authTokenManager) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
 
 		isAuthorizationRequired := len(ctx.Operation().Security) > 0
@@ -240,7 +247,7 @@ func NewAuthMiddleware(api huma.API, jwtService *JWTService) func(ctx huma.Conte
 			return
 		}
 
-		_, err := jwtService.Verify(tokenValue)
+		_, err := jwtService.VerifyJWT(tokenValue)
 
 		if err != nil {
 			huma.WriteErr(api, ctx, http.StatusUnauthorized, "Unauthorized")
@@ -251,10 +258,10 @@ func NewAuthMiddleware(api huma.API, jwtService *JWTService) func(ctx huma.Conte
 	}
 }
 
-func NewServer(port uint16, jwtService *JWTService, logger *slog.Logger) *Server {
+func NewServer(port uint16, authTokenManager authTokenManager, logger *slog.Logger) *Server {
 	return &Server{
 		port:       port,
 		logger:     logger,
-		jwtService: jwtService,
+		authTokenManager: authTokenManager,
 	}
 }
