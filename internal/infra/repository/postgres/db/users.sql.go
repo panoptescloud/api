@@ -47,7 +47,7 @@ INSERT INTO github_users (user_id, node_id)
 VALUES ($1, $2)
 ON CONFLICT (user_id)
 DO UPDATE
-SET node_id = $2
+SET node_id = EXCLUDED.node_id
 `
 
 type UpsertGithubUserParams struct {
@@ -65,8 +65,8 @@ INSERT INTO users (id, email, name)
 VALUES ($1, $2, $3)
 ON CONFLICT (id)
 DO UPDATE
-SET email = $2,
-    name = $3
+SET email = EXCLUDED.email,
+    name = EXCLUDED.name
 `
 
 type UpsertUserParams struct {

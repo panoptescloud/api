@@ -15,6 +15,17 @@ type GithubUser struct {
 	NodeID string
 }
 
+type RefreshToken struct {
+	ID pgtype.UUID
+	// The ID of the user that is associated with this refresh token.
+	UserID pgtype.UUID
+	// The actual refresh token that can grant a new access token. This is hashed before being stored so won't be usable outside of the app.
+	Value string
+	// When the refresh token expires. A periodic cron job should delete anything that has already expired.
+	IssuedAt  pgtype.Timestamptz
+	ExpiresAt pgtype.Timestamptz
+}
+
 type User struct {
 	// Primary key and unique ID for a user in the system.
 	ID pgtype.UUID
