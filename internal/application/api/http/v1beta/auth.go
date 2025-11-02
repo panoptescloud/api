@@ -55,6 +55,9 @@ func (c *AuthController) RegisterRoutes(api huma.API, debugErrorsEnabled bool) {
 		Method:        http.MethodPost,
 		Path:          "/auth/github/login",
 		Summary:       "Login or create an account via github Oauth.",
+		Tags: []string{
+			"Authentication",
+		},
 		DefaultStatus: http.StatusOK,
 		// TODO: figure out which statuses should return here and implement them
 		Metadata: map[string]any{

@@ -20,8 +20,12 @@ func (c *ProbesController) RegisterRoutes(api huma.API, debugErrorsEnabled bool)
 		Path:          "/_probes/startup",
 		Summary:       "Check if the app is started up",
 		DefaultStatus: http.StatusNoContent,
+		Tags: []string{
+			"Probes",
+		},
 		Metadata: map[string]any{
 			operations.OptDisableAllDefaults: true,
+			operations.OptDisableAuthentication: true,
 		},
 	}, ErrorHandler(debugErrorsEnabled, c.Startup))
 }
