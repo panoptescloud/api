@@ -8,7 +8,6 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/panoptescloud/api/internal/application/api/http/operations"
-	"github.com/panoptescloud/api/internal/application/api/http/v1beta/responses"
 	"github.com/panoptescloud/api/internal/application/bus"
 	appusers "github.com/panoptescloud/api/internal/application/users"
 	"github.com/panoptescloud/api/internal/domain"
@@ -119,7 +118,7 @@ func (c *AuthController) RegisterRoutes(api huma.API, debugErrorsEnabled bool) {
 				"refresh": []string{},
 			},
 		},
-	}, ErrorHandler(debugErrorsEnabled, c.Refresh))
+	}, ErrorHandler(debugErrorsEnabled, c.Logout))
 }
 
 func NewAuthController(b *bus.Bus, githubOauthClient githubOauthClient, authTokenManager sessionManager, logger *slog.Logger) *AuthController {
@@ -268,12 +267,52 @@ func (c *AuthController) Refresh(ctx context.Context, req *RefreshRequest) (*Ses
 	return buildSessionResponse(session), nil
 }
 
-func (c *AuthController) Logout(ctx context.Context, req *RefreshRequest) (*responses.NoContent, error) {
-	if req.RefreshToken == "" {
-		return nil, domain.ErrUnauthorised{}
+// TODO: this looks awful in the spec viewer, see if we can improve it.
+type LogoutResponse struct {
+	SetCookie []http.Cookie `header:"Set-Cookie" description:"Cookies set by the backend: auth_token (httpOnly, JWT) and csrf_token (JS-readable, for X-CSRF-Token header)"`
+	Status int
+}
+
+func (c *AuthController) Logout(ctx context.Context, req *RefreshRequest) (*LogoutResponse, error) {
+	resp := &LogoutResponse{
+		Status: 204,
+		SetCookie: []http.Cookie{
+			{
+				Name:     "auth_token",
+				Value:    "",
+				Path:     "/",
+				HttpOnly: true,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+				MaxAge:   -1,
+			},
+			{
+				Name:     "csrf_token",
+				Value:    "",
+				Path:     "/",
+				HttpOnly: false,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+				MaxAge:   -1,
+			},
+			{
+				Name:     "refresh_token",
+				Value:    "",
+				Path:     "/",
+				HttpOnly: false,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+				MaxAge:   -1,
+			},
+		},
 	}
 
-	return &responses.NoContent{}, c.sessionManager.DeleteRefreshToken(dto.HashedValue{
+	if req.RefreshToken == "" {
+		return resp, domain.ErrUnauthorised{}
+	}
+
+	return resp, c.sessionManager.DeleteRefreshToken(dto.HashedValue{
 		Value: req.RefreshToken,
 	})
 }
+
