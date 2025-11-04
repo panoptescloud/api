@@ -25,6 +25,7 @@ func handleServe(_ *cobra.Command, _ []string) error {
 
 	controllers := []http.Controller{
 		v1beta.NewProbesController(),
+		v1beta.NewUsersController(),
 		v1beta.NewAuthController(
 			globalBus,
 			github_oauth.NewClient(

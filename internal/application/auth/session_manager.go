@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"encoding/base64"
-	"errors"
 	"fmt"
 	"os"
 	"time"
@@ -23,9 +22,10 @@ type tokenRepo interface {
 	Save(dto.RefreshToken) error
 	ByToken(dto.HashedValue) (dto.RefreshToken, error)
 	Delete(id uuid.UUID) error
+	DeleteByToken(token dto.HashedValue) error
 }
 
-type TokenManager struct {
+type SessionManager struct {
 	publicKey  *rsa.PublicKey
 	privateKey *rsa.PrivateKey
 	tokenRepo  tokenRepo
@@ -45,103 +45,99 @@ func generateRandomToken() (string, error) {
 	return base64.RawURLEncoding.EncodeToString(b), nil
 }
 
-func (tm *TokenManager) GenerateJWT(userID users.UserID, name string) (string, error) {
+func (tm *SessionManager) Create(userID users.UserID) (dto.Session, error) {
 	id, err := uuid.NewUUID()
 
 	if err != nil {
-		return "", err
+		return dto.Session{}, err
 	}
 
 	tokenValue, err := generateRandomToken()
 	if err != nil {
-		return "", err
+		return dto.Session{}, err
 	}
 
 	hashedToken, err := tm.hasher.Hash(tokenValue)
 
 	if err != nil {
-		return "", err
+		return dto.Session{}, err
 	}
+
+	issuedAt := time.Now()
 
 	rt := dto.RefreshToken{
 		ID:        id,
 		Token:     hashedToken,
-		IssuedAt:  time.Now(),
-		ExpiresAt: time.Now().Add(time.Hour * 24 * 30), // 30 days
+		IssuedAt:  issuedAt,
+		ExpiresAt: issuedAt.Add(time.Hour * 24 * 14), // 14 days
 		UserID:    userID.WrappedUuid(),
 	}
 
 	if err := tm.tokenRepo.Save(rt); err != nil {
-		return "", err
+		return dto.Session{}, err
 	}
 
+	jwtExpiresAt := issuedAt.Add(time.Minute * 5)
 	claims := jwt.MapClaims{
 		"sub":           userID.String(),
-		"name":          name,
-		"iat":           time.Now().Unix(),
-		"exp":           time.Now().Add(time.Hour * 24).Unix(),
-		"refresh_token": hashedToken.Original,
+		"iat":           issuedAt.Unix(),
+		"exp":           jwtExpiresAt.Unix(),
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	csrf, err := generateRandomToken()
 
-	return token.SignedString(tm.privateKey)
+	if err != nil {
+		return dto.Session{}, nil
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodRS256, claims)
+	signedToken, err := token.SignedString(tm.privateKey)
+
+	if err != nil {
+		return dto.Session{}, err
+	}
+
+	return dto.Session{
+		JWT: signedToken,
+		RefreshToken: rt,
+		CSRFToken: csrf,
+		UserID: userID.String(),
+		JWTExpiresAt: jwtExpiresAt,
+		IssuedAt: issuedAt,
+		RefreshTokenExpiresAt: rt.ExpiresAt,
+	}, nil
 }
 
 // TODO: see about tidying this up a bit
-func (tm *TokenManager) RefreshJWT(tokenString string) (string, error) {
-	
-	token, err := tm.VerifyJWT(tokenString)
-
-	if err != nil {
-		return "", err
-	}
-
-	claims, ok := token.Claims.(jwt.MapClaims)
-	if !ok {
-		return "", fmt.Errorf("invalid claims type")
-	}
-
-	refreshValue, ok := claims["refresh_token"].(string)
-	if !ok || refreshValue == "" {
-		return "", fmt.Errorf("missing refresh token in claims")
-	}
-
-	hashedToken, err := tm.hasher.Hash(refreshValue)
-	if err != nil {
-		return "", err
-	}
-
+func (tm *SessionManager) Refresh(hashedToken dto.HashedValue) (dto.Session, error) {
 	oldRT, err := tm.tokenRepo.ByToken(hashedToken)
 	if err != nil {
-		return "", fmt.Errorf("failed to find old refresh token: %w", err)
+		return dto.Session{}, fmt.Errorf("failed to find old refresh token: %w", err)
 	}
 
 	userID, err := users.NewUserID(oldRT.UserID.String())
 	if err != nil {
-		return "", err
+		return dto.Session{}, err
 	}
 
-	name, ok := claims["name"].(string)
 
-	if !ok || name == "" {
-		return "", errors.New("failed to get name from old token")
-	}
-
-	newToken, err := tm.GenerateJWT(userID, name)
+	newSession, err := tm.Create(userID)
 
 	if err != nil {
-		return "", err
+		return dto.Session{}, err
 	}
 
 	if err := tm.tokenRepo.Delete(oldRT.ID); err != nil {
 		// TODO: Log warning, but don’t block the refresh
 	}
 
-	return newToken, nil
+	return newSession, nil
 }
 
-func (tm *TokenManager) VerifyJWT(tokenString string) (*jwt.Token, error) {
+func (tm *SessionManager) DeleteRefreshToken(hashedToken dto.HashedValue) (error) {
+	return tm.tokenRepo.DeleteByToken(hashedToken)
+}
+
+func (tm *SessionManager) VerifyJWT(tokenString string) (*jwt.Token, error) {
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodRSA); !ok {
 			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
@@ -160,7 +156,7 @@ func (tm *TokenManager) VerifyJWT(tokenString string) (*jwt.Token, error) {
 	return token, nil
 }
 
-func NewTokenManager(tokenRepo tokenRepo, hasher hasher, privateKeyPath string, publicKeyPath string) (*TokenManager, error) {
+func NewSessionManager(tokenRepo tokenRepo, hasher hasher, privateKeyPath string, publicKeyPath string) (*SessionManager, error) {
 	privateKeyData, err := os.ReadFile(privateKeyPath)
 
 	if err != nil {
@@ -185,7 +181,7 @@ func NewTokenManager(tokenRepo tokenRepo, hasher hasher, privateKeyPath string, 
 		return nil, err
 	}
 
-	return &TokenManager{
+	return &SessionManager{
 		publicKey:  publicKey,
 		privateKey: privateKey,
 		tokenRepo:  tokenRepo,

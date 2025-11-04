@@ -21,6 +21,16 @@ func (q *Queries) Delete(ctx context.Context, id pgtype.UUID) error {
 	return err
 }
 
+const deleteByToken = `-- name: DeleteByToken :exec
+DELETE FROM refresh_tokens
+WHERE value=$1
+`
+
+func (q *Queries) DeleteByToken(ctx context.Context, value string) error {
+	_, err := q.db.Exec(ctx, deleteByToken, value)
+	return err
+}
+
 const getRefreshTokenByValue = `-- name: GetRefreshTokenByValue :one
 SELECT
     id, user_id, value, issued_at, expires_at

@@ -72,6 +72,12 @@ func (rtr *RefreshTokensRepository) Delete(id uuid.UUID) error {
 	})
 }
 
+func (rtr *RefreshTokensRepository) DeleteByToken(token dto.HashedValue) error {
+	queries := db.New(rtr.p)
+
+	return queries.DeleteByToken(context.TODO(), token.Value)
+}
+
 func NewRefreshTokensRepository(pool *pgxpool.Pool) *RefreshTokensRepository {
 	return &RefreshTokensRepository{
 		p: pool,

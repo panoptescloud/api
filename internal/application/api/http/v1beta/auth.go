@@ -8,19 +8,24 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/panoptescloud/api/internal/application/api/http/operations"
+	"github.com/panoptescloud/api/internal/application/api/http/v1beta/responses"
 	"github.com/panoptescloud/api/internal/application/bus"
 	appusers "github.com/panoptescloud/api/internal/application/users"
+	"github.com/panoptescloud/api/internal/domain"
 	"github.com/panoptescloud/api/internal/domain/users"
+	"github.com/panoptescloud/api/pkg/dto"
 )
+
 type githubOauthClient interface {
 	GetToken(code string) (string, error)
 	GetProfile(accessToken string) (users.GithubProfile, error)
 }
 
-type authTokenManager interface {
+type sessionManager interface {
 	VerifyJWT(tokenString string) (*jwt.Token, error)
-	GenerateJWT(userID users.UserID, name string) (string, error)
-	RefreshJWT(tokenString string) (string, error)
+	Create(userID users.UserID) (dto.Session, error)
+	Refresh(hashedToken dto.HashedValue) (dto.Session, error)
+	DeleteRefreshToken(hashedToken dto.HashedValue) error
 }
 
 type GithubLoginRequestBody struct {
@@ -31,65 +36,98 @@ type GithubLoginRequest struct {
 	Body GithubLoginRequestBody
 }
 
-type JWTResponseData struct {
-	Token string `json:"token"`
+type User struct {
+	ID string `json:"id"`
 }
 
-type JWTResponseBody struct {
-	Data JWTResponseData `json:"data"`
+type SessionResponseData struct {
+	CSRFToken string `json:"csrf_token"`
+	User      User   `json:"user"`
 }
 
-type JWTResponse struct {
-	Body JWTResponseBody
+type SessionResponseBody struct {
+	Data SessionResponseData `json:"data"`
+}
+
+// TODO: this looks awful in the spec viewer, see if we can improve it.
+type SessionResponse struct {
+	SetCookie []http.Cookie `header:"Set-Cookie" description:"Cookies set by the backend: auth_token (httpOnly, JWT) and csrf_token (JS-readable, for X-CSRF-Token header)"`
+	Body      SessionResponseBody
 }
 
 type AuthController struct {
-	bus *bus.Bus
+	bus               *bus.Bus
 	githubOauthClient githubOauthClient
-	logger *slog.Logger
-	authTokenManager authTokenManager
+	logger            *slog.Logger
+	sessionManager    sessionManager
 }
 
 func (c *AuthController) RegisterRoutes(api huma.API, debugErrorsEnabled bool) {
 	huma.Register(api, huma.Operation{
-		OperationID:   "v1.auth.github.login",
-		Method:        http.MethodPost,
-		Path:          "/auth/github/login",
-		Summary:       "Login or create an account via github Oauth.",
+		OperationID: "v1.auth.github.login",
+		Method:      http.MethodPost,
+		Path:        "/auth/github/login",
+		Summary:     "Login or create an account via github Oauth.",
 		Tags: []string{
 			"Authentication",
 		},
 		DefaultStatus: http.StatusOK,
 		// TODO: figure out which statuses should return here and implement them
 		Metadata: map[string]any{
-			operations.OptDisableAuthentication: true,
-			operations.OptDisableAllDefaults: true,
+			operations.OptDisableDefaultAuthentication: true,
+			operations.OptDisableAllDefaultResponses:   true,
 		},
 	}, ErrorHandler(debugErrorsEnabled, c.LoginWithGithub))
 
 	huma.Register(api, huma.Operation{
-		OperationID:   "v1.auth.refresh",
-		Method:        http.MethodPost,
-		Path:          "/auth/tokens/refresh",
-		Summary:       "Refresh a JWT token",
+		OperationID: "v1.auth.refresh",
+		Method:      http.MethodPost,
+		Path:        "/auth/tokens/refresh",
+		Summary:     "Refresh a JWT token",
 		Tags: []string{
 			"Authentication",
 		},
 		DefaultStatus: http.StatusOK,
 		// TODO: figure out which statuses should return here and implement them
 		Metadata: map[string]any{
-			operations.OptDisableAllDefaults: true,
-			operations.OptDisableAuthentication: true,
+			operations.OptDisableAllDefaultResponses:   true,
+			operations.OptDisableDefaultAuthentication: true,
+		},
+		Security: []map[string][]string{
+			{
+				"refresh": []string{},
+			},
+		},
+	}, ErrorHandler(debugErrorsEnabled, c.Refresh))
+
+	huma.Register(api, huma.Operation{
+		OperationID: "v1.auth.logout",
+		Method:      http.MethodDelete,
+		Path:        "/auth/logout",
+		Summary:     "Removes the refresh token.",
+		Description: "The auth token may still work for a short while, but we have a short token expiry.",
+		Tags: []string{
+			"Authentication",
+		},
+		DefaultStatus: http.StatusOK,
+		Metadata: map[string]any{
+			operations.OptDisableAllDefaultResponses:   true,
+			operations.OptDisableDefaultAuthentication: true,
+		},
+		Security: []map[string][]string{
+			{
+				"refresh": []string{},
+			},
 		},
 	}, ErrorHandler(debugErrorsEnabled, c.Refresh))
 }
 
-func NewAuthController(b *bus.Bus, githubOauthClient githubOauthClient, authTokenManager authTokenManager, logger *slog.Logger) *AuthController {
+func NewAuthController(b *bus.Bus, githubOauthClient githubOauthClient, authTokenManager sessionManager, logger *slog.Logger) *AuthController {
 	return &AuthController{
-		bus: b,
+		bus:               b,
 		githubOauthClient: githubOauthClient,
-		logger: logger,
-		authTokenManager: authTokenManager,
+		logger:            logger,
+		sessionManager:    authTokenManager,
 	}
 }
 
@@ -101,9 +139,9 @@ func (c *AuthController) createAccountFromGithubProfile(profile users.GithubProf
 	}
 
 	dto := appusers.CreateUser{
-		ID: id,
-		Email: profile.Email,
-		Name: profile.Name,
+		ID:           id,
+		Email:        profile.Email,
+		Name:         profile.Name,
 		GithubNodeID: profile.NodeID,
 	}
 
@@ -120,16 +158,58 @@ func (c *AuthController) createAccountFromGithubProfile(profile users.GithubProf
 	})
 }
 
+func buildSessionResponse(session dto.Session) *SessionResponse {
+	return &SessionResponse{
+		SetCookie: []http.Cookie{
+			{
+				Name:     "auth_token",
+				Value:    session.JWT,
+				Path:     "/",
+				HttpOnly: true,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+				MaxAge:   int(session.JWTExpiresAt.Sub(session.IssuedAt).Seconds()),
+			},
+			{
+				Name:     "csrf_token",
+				Value:    session.CSRFToken,
+				Path:     "/",
+				HttpOnly: false,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+				MaxAge:   int(session.JWTExpiresAt.Sub(session.IssuedAt).Seconds()),
+			},
+			{
+				Name:     "refresh_token",
+				Value:    session.RefreshToken.Token.Value,
+				Path:     "/",
+				HttpOnly: false,
+				Secure:   true,
+				SameSite: http.SameSiteStrictMode,
+				MaxAge:   int(session.RefreshTokenExpiresAt.Sub(session.IssuedAt).Seconds()),
+			},
+		},
+		Body: SessionResponseBody{
+			Data: SessionResponseData{
+				User: User{
+					ID: session.UserID,
+				},
+				CSRFToken: session.CSRFToken,
+			},
+		},
+	}
+}
+
 /*
 Thinking this should:
-- call github oauth client to get token (infra)
-- retrieve user info from github (infra)
-- create user if not exists (application)
-	-> use domain to create new user
-- generate jwt for user (application)
-- return token (application)
+  - call github oauth client to get token (infra)
+  - retrieve user info from github (infra)
+  - create user if not exists (application)
+    -> use domain to create new user
+  - generate jwt for user (application)
+  - return token (application)
 */
-func (c *AuthController) LoginWithGithub(ctx context.Context, req *GithubLoginRequest) (*JWTResponse, error) {
+func (c *AuthController) LoginWithGithub(ctx context.Context, req *GithubLoginRequest) (*SessionResponse, error) {
 	token, err := c.githubOauthClient.GetToken(req.Body.Code)
 
 	if err != nil {
@@ -158,42 +238,42 @@ func (c *AuthController) LoginWithGithub(ctx context.Context, req *GithubLoginRe
 		}
 	}
 
-	jwt, err := c.authTokenManager.GenerateJWT(user.ID(), user.Name().String())
+	session, err := c.sessionManager.Create(user.ID())
 
 	if err != nil {
 		return nil, err
 	}
 
-	// simply generate token
-	return &JWTResponse{
-		Body: JWTResponseBody{
-			Data: JWTResponseData{
-				Token: jwt,
-			},
-		},
-	}, nil
-}
-
-type RefreshRequestBody struct {
-	RefreshToken string `json:"refresh_token" doc:"The token that will be refreshed." required:"true"`
+	return buildSessionResponse(session), nil
 }
 
 type RefreshRequest struct {
-	Body RefreshRequestBody
+	RefreshToken string `cookie:"refresh_token"`
 }
 
-func (c *AuthController) Refresh(ctx context.Context, req *RefreshRequest) (*JWTResponse, error) {
-	token, err := c.authTokenManager.RefreshJWT(req.Body.RefreshToken)
+func (c *AuthController) Refresh(ctx context.Context, req *RefreshRequest) (*SessionResponse, error) {
+	slog.Debug("refresh token", "token", req.RefreshToken)
+	if req.RefreshToken == "" {
+		return nil, domain.ErrUnauthorised{}
+	}
+
+	session, err := c.sessionManager.Refresh(dto.HashedValue{
+		Value: req.RefreshToken,
+	})
 
 	if err != nil {
 		return nil, err
 	}
 
-	return &JWTResponse{
-		Body: JWTResponseBody{
-			Data: JWTResponseData{
-				Token: token,
-			},
-		},
-	}, nil
+	return buildSessionResponse(session), nil
+}
+
+func (c *AuthController) Logout(ctx context.Context, req *RefreshRequest) (*responses.NoContent, error) {
+	if req.RefreshToken == "" {
+		return nil, domain.ErrUnauthorised{}
+	}
+
+	return &responses.NoContent{}, c.sessionManager.DeleteRefreshToken(dto.HashedValue{
+		Value: req.RefreshToken,
+	})
 }

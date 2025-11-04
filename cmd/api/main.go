@@ -29,7 +29,7 @@ type services struct {
 	githubOauthClient *github_oauth.Client
 	postgresPool *pgxpool.Pool
 	usersRepo *postgres.UsersRepository
-	authTokenManager *auth.TokenManager
+	authTokenManager *auth.SessionManager
 	refreshTokensRepo *postgres.RefreshTokensRepository
 	hasher *hasher.HMACSHA256Hasher
 }
@@ -98,12 +98,12 @@ func (s *services) GetHasher() *hasher.HMACSHA256Hasher {
 	return s.hasher
 }
 
-func (s *services) GetAuthTokenManager() *auth.TokenManager {
+func (s *services) GetAuthTokenManager() *auth.SessionManager {
 	if s.authTokenManager != nil {
 		return s.authTokenManager
 	}
 
-	svc, err := auth.NewTokenManager(
+	svc, err := auth.NewSessionManager(
 		s.GetRefreshTokensRepo(),
 		s.GetHasher(),
 		appCfg.GetAuthJWTPrivateKeyPath(),

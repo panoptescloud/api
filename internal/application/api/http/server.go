@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"slices"
 	"strconv"
-	"strings"
 
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humaecho"
@@ -15,12 +14,10 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/panoptescloud/api/internal/application/api/http/operations"
-	"github.com/panoptescloud/api/internal/domain/users"
 )
 
-type authTokenManager interface {
+type sessionManager interface {
 	VerifyJWT(tokenString string) (*jwt.Token, error)
-	GenerateJWT(userID users.UserID, name string) (string, error)
 }
 
 type Controller interface {
@@ -35,6 +32,12 @@ var opsWithoutBodies = []string{
 
 	// Probably don't need this one, but leaving for good measure
 	http.MethodTrace,
+}
+
+var methodsWithoutCSRF = map[string]bool{
+	http.MethodGet:     true,
+	http.MethodHead:    true,
+	http.MethodOptions: true,
 }
 
 func addValidationErrorResponse(op *huma.Operation) {
@@ -117,7 +120,7 @@ func configureDefaultResponses(api *huma.OpenAPI, op *huma.Operation) {
 		op.Responses["default"] = nil
 	}
 
-	if v, ok := op.Metadata[operations.OptDisableAllDefaults]; ok {
+	if v, ok := op.Metadata[operations.OptDisableAllDefaultResponses]; ok {
 		if optAsBool, ok := v.(bool); ok && optAsBool {
 			return
 		}
@@ -130,11 +133,11 @@ func configureDefaultResponses(api *huma.OpenAPI, op *huma.Operation) {
 
 func configureDefaultSecurityRequirements(api *huma.OpenAPI, op *huma.Operation) {
 	// If this is set in metadata we don't need any auth on that endpoint.
-	if _, ok := op.Metadata[operations.OptDisableAuthentication]; ok {
+	if _, ok := op.Metadata[operations.OptDisableDefaultAuthentication]; ok {
 		return
 	}
 
-	schemeName := "bearer"
+	schemeName := "auth"
 
 	if len(op.Security) == 0 {
 		op.Security = []map[string][]string{
@@ -145,17 +148,17 @@ func configureDefaultSecurityRequirements(api *huma.OpenAPI, op *huma.Operation)
 
 	// iterate existing requirements
 	for i, req := range op.Security {
-		if _, ok := req[schemeName]; ! ok {
+		if _, ok := req[schemeName]; !ok {
 			op.Security[i][schemeName] = []string{}
 		}
 	}
 }
 
 type Server struct {
-	port       uint16
-	echo       *echo.Echo
-	logger     *slog.Logger
-	authTokenManager authTokenManager
+	port             uint16
+	echo             *echo.Echo
+	logger           *slog.Logger
+	authTokenManager sessionManager
 }
 
 func (srv *Server) Start(controllers []Controller) error {
@@ -189,18 +192,24 @@ func (srv *Server) Start(controllers []Controller) error {
 		// they are issued or which flows might be supported. This is simpler but
 		// tells clients less information. Look at the above and see if we can get
 		// that working with how we get the code from github on our frontend.
-		"bearer": {
-			Type:         "http",
-			Scheme:       "bearer",
-			BearerFormat: "JWT",
-			In:           "header",
+		"auth": {
+			Type:        "apiKey",
+			Description: "JWT authentication token stored in an HTTP-only cookie named `auth_token`.",
+			Name:        "auth_token",
+			In:          "cookie",
+		},
+		"refresh": {
+			Type:        "apiKey",
+			Description: "A token stored in an HTTP-only cookie named `refresh_token`, used for getting a new auth token and refresh token.",
+			Name:        "refresh_token",
+			In:          "cookie",
 		},
 	}
 	hg := humaecho.NewWithGroup(e, api, apiCfg)
 	hg.UseMiddleware(NewAuthMiddleware(hg, srv.authTokenManager))
 
 	hg.OpenAPI().OnAddOperation = append(
-		hg.OpenAPI().OnAddOperation, 
+		hg.OpenAPI().OnAddOperation,
 		// Note, this should come before default responses, as we may want to use
 		// the security requirements to configure extra responses based on whether
 		// authentication is required.
@@ -231,37 +240,90 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 	return srv.echo.Shutdown(ctx)
 }
 
-func NewAuthMiddleware(api huma.API, jwtService authTokenManager) func(ctx huma.Context, next func(huma.Context)) {
+//TODO consts for security schemes
+func requiresRefreshToken(ctx huma.Context) bool {
+	sec := ctx.Operation().Security
+
+	for _, v := range sec {
+		for method := range v {
+			if method == "refresh" {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func requiresAuthToken(ctx huma.Context) bool {
+	sec := ctx.Operation().Security
+
+	for _, v := range sec {
+		for method := range v {
+			if method == "auth" {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+func requiresCSRFToken(ctx huma.Context) bool {
+	return !methodsWithoutCSRF[ctx.Method()] && requiresAuthToken(ctx)
+}
+
+func NewAuthMiddleware(api huma.API, jwtService sessionManager) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
+		authTokenRequired := requiresAuthToken(ctx)
+		refreshTokenRequired := requiresRefreshToken(ctx)
+		csrfTokenRequired := requiresCSRFToken(ctx)
 
-		isAuthorizationRequired := len(ctx.Operation().Security) > 0
-
-		if !isAuthorizationRequired {
+		if !authTokenRequired && !refreshTokenRequired && !csrfTokenRequired {
+			fmt.Printf("in here\n\n")
 			next(ctx)
 			return
 		}
 
-		tokenValue := strings.TrimPrefix(ctx.Header("Authorization"), "Bearer ")
-		if len(tokenValue) == 0 {
-			huma.WriteErr(api, ctx, http.StatusUnauthorized, "Unauthorized")
-			return
+		if authTokenRequired {
+			// Verify JWT from httpOnly cookie
+			authCookie, err := huma.ReadCookie(ctx, "auth_token")
+			if err != nil || authCookie.Value == "" {
+				huma.WriteErr(api, ctx, http.StatusUnauthorized, "Unauthorized")
+				return
+			}
+			if _, err := jwtService.VerifyJWT(authCookie.Value); err != nil {
+				huma.WriteErr(api, ctx, http.StatusUnauthorized, "Unauthorized")
+				return
+			}
 		}
 
-		_, err := jwtService.VerifyJWT(tokenValue)
+		if csrfTokenRequired {
+			xcsrfToken := ctx.Header("X-CSRF-Token")
+			xcsrfCookie, err := huma.ReadCookie(ctx, "csrf_token")
+			if err != nil || xcsrfToken != xcsrfCookie.Value {
+				huma.WriteErr(api, ctx, http.StatusForbidden, "Forbidden - invalid CSRF")
+				return
+			}
 
-		if err != nil {
-			huma.WriteErr(api, ctx, http.StatusUnauthorized, "Unauthorized")
-			return
 		}
-	
+
+		if refreshTokenRequired {
+			authCookie, err := huma.ReadCookie(ctx, "refresh_token")
+			if err != nil || authCookie.Value == "" {
+				huma.WriteErr(api, ctx, http.StatusUnauthorized, "Unauthorized")
+				return
+			}
+		}
+
 		next(ctx)
 	}
 }
 
-func NewServer(port uint16, authTokenManager authTokenManager, logger *slog.Logger) *Server {
+func NewServer(port uint16, authTokenManager sessionManager, logger *slog.Logger) *Server {
 	return &Server{
-		port:       port,
-		logger:     logger,
+		port:             port,
+		logger:           logger,
 		authTokenManager: authTokenManager,
 	}
 }
