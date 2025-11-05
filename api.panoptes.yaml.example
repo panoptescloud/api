@@ -1,0 +1,30 @@
+# Can be empty and just use defaults, but the file must be present for viper
+logging:
+  level: "debug"
+
+github:
+  oauth:
+    clientId: "ADD ME"
+    clientSecret: "ADD ME"
+
+db:
+  postgres:
+    # Rest of the params come from environment variables in local
+    # host: ""
+    # username: ""
+    # password: ""
+    # port: 5432
+    # dbName: panoptes
+    maxConnections: 10
+    minConnections: 3
+    sslMode: disable
+
+auth:
+  jwt:
+    # Run `orca ext jwt:gen-keys` to generate this
+    # TODO: add to docs and startup scripts 
+    privateKeyFile: /app/.local/jwt/keys/private.key
+    publicKeyFile: /app/.local/jwt/keys/private.key
+
+    # Run `orca ext jwt:gen-random-secret` to generate this
+    hmacKey: ""

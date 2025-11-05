@@ -1,0 +1,5 @@
+# Ignore missing healthcheck in Dockerfile
+# This ain't great in the long term, but the healthcheck depends on what is 
+# actually running, and there may be subcommands that run different things.
+# https://avd.aquasec.com/misconfig/ds026
+DS026

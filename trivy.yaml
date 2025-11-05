@@ -2,7 +2,7 @@ cache:
   # This only affects local I think, as per their docs the cache is stored 
   # elsewhere in CI and cannot be configured by trivy.yaml
   # http://github.com/aquasecurity/trivy-action?tab=readme-ov-file#inputs
-  dir: "./assets/trivy/cache"
+  dir: "./.local/trivy/cache"
 
 # Same as '--debug'
 debug: false
@@ -23,5 +23,8 @@ scan:
    - misconfig
 
   skip-dirs:
-    # No need to scan this really, it's just a playground right now
+    # Misc
     - 'hack'
+
+    # --- gitignored: purely for local so doesn't need scanning
+    - '.local/jwt/keys'

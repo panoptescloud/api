@@ -10,3 +10,47 @@ envFiles:
 hosts:
   - panoptes.test
   - api-docs.panoptes.test
+  - pgadmin.panoptes.test
+
+extensions:
+- name: "go:fmt"
+  service: "app"
+  command: "go fmt"
+  defaultArgs: [ "./..." ]
+
+- name: "go:tidy"
+  service: "app"
+  command: "go mod tidy"
+
+- name: "go:test"
+  service: "app"
+  command: "./scripts/test.sh"
+  defaultArgs: [ "./..." ]
+
+- name: "migrate:up"
+  service: "migrate"
+  command: "up"
+
+- name: "migrate:wipe"
+  service: "migrate"
+  command: "drop"
+
+- name: "sqlc"
+  service: "app"
+  command: "sqlc"
+  defaultArgs:
+    - generate
+
+- name: "jwt:gen-keys"
+  service: "jwt-keygen"
+  command: "/gen_rsa.sh"
+
+- name: "jwt:gen-random-secret"
+  service: "jwt-keygen"
+  command: "/gen_secret_key.sh"
+
+- name: "trivy:scan:fs"
+  service: "trivy-scan"
+  command: "fs"
+  defaultArgs:
+    - "."
