@@ -53,12 +53,12 @@ func (rtr *RefreshTokensRepository) ByToken(token dto.HashedValue) (dto.RefreshT
 	}
 
 	return dto.RefreshToken{
-		ID: t.ID.Bytes,
+		ID:     t.ID.Bytes,
 		UserID: t.UserID.Bytes,
 		Token: dto.HashedValue{
 			Value: t.Value,
 		},
-		IssuedAt: t.IssuedAt.Time,
+		IssuedAt:  t.IssuedAt.Time,
 		ExpiresAt: t.ExpiresAt.Time,
 	}, nil
 }

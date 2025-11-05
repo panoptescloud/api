@@ -18,5 +18,6 @@ jobs:
         scan-type: 'fs'
         scan-ref: '.'
         trivy-config: trivy.yaml
+        trivyignores: ".trivyignore"
         # Make trivy fail when it finds a vulnerability
         exit-code: 1

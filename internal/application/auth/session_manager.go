@@ -29,7 +29,7 @@ type SessionManager struct {
 	publicKey  *rsa.PublicKey
 	privateKey *rsa.PrivateKey
 	tokenRepo  tokenRepo
-	hasher hasher
+	hasher     hasher
 }
 
 // GenerateRefreshToken returns a securely generated random string of n bytes,
@@ -79,9 +79,9 @@ func (tm *SessionManager) Create(userID users.UserID) (dto.Session, error) {
 
 	jwtExpiresAt := issuedAt.Add(time.Minute * 5)
 	claims := jwt.MapClaims{
-		"sub":           userID.String(),
-		"iat":           issuedAt.Unix(),
-		"exp":           jwtExpiresAt.Unix(),
+		"sub": userID.String(),
+		"iat": issuedAt.Unix(),
+		"exp": jwtExpiresAt.Unix(),
 	}
 
 	csrf, err := generateRandomToken()
@@ -97,12 +97,12 @@ func (tm *SessionManager) Create(userID users.UserID) (dto.Session, error) {
 	}
 
 	return dto.Session{
-		JWT: signedToken,
-		RefreshToken: rt,
-		CSRFToken: csrf,
-		UserID: userID.String(),
-		JWTExpiresAt: jwtExpiresAt,
-		IssuedAt: issuedAt,
+		JWT:                   signedToken,
+		RefreshToken:          rt,
+		CSRFToken:             csrf,
+		UserID:                userID.String(),
+		JWTExpiresAt:          jwtExpiresAt,
+		IssuedAt:              issuedAt,
 		RefreshTokenExpiresAt: rt.ExpiresAt,
 	}, nil
 }
@@ -119,7 +119,6 @@ func (tm *SessionManager) Refresh(hashedToken dto.HashedValue) (dto.Session, err
 		return dto.Session{}, err
 	}
 
-
 	newSession, err := tm.Create(userID)
 
 	if err != nil {
@@ -133,7 +132,7 @@ func (tm *SessionManager) Refresh(hashedToken dto.HashedValue) (dto.Session, err
 	return newSession, nil
 }
 
-func (tm *SessionManager) DeleteRefreshToken(hashedToken dto.HashedValue) (error) {
+func (tm *SessionManager) DeleteRefreshToken(hashedToken dto.HashedValue) error {
 	return tm.tokenRepo.DeleteByToken(hashedToken)
 }
 
@@ -185,6 +184,6 @@ func NewSessionManager(tokenRepo tokenRepo, hasher hasher, privateKeyPath string
 		publicKey:  publicKey,
 		privateKey: privateKey,
 		tokenRepo:  tokenRepo,
-		hasher: hasher,
+		hasher:     hasher,
 	}, nil
 }

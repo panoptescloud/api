@@ -12,8 +12,6 @@ func buildCommandBus() *bus.Bus {
 		return globalBus
 	}
 
-
-
 	globalBus = bus.New()
 
 	// --- Users

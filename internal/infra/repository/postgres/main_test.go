@@ -8,11 +8,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/labstack/gommon/log"
 	"github.com/panoptescloud/api/tests/db/postgrestest"
 )
 
-var pool     *pgxpool.Pool
-
+var pool *pgxpool.Pool
 
 func TestMain(m *testing.M) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
@@ -20,14 +20,13 @@ func TestMain(m *testing.M) {
 
 	container, basePool := postgrestest.SetupTestDB()
 
-
 	pool = basePool
 	defer pool.Close()
 
 	exitCode := m.Run()
 
 	if err := container.Terminate(ctx); err != nil {
-		panic(err)
+		log.Errorf("failed to terminate container")
 	}
 
 	os.Exit(exitCode)
@@ -58,4 +57,3 @@ func createUserWithGithubUser(pool *pgxpool.Pool, id uuid.UUID, name string, ema
 
 	return err
 }
-

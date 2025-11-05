@@ -27,11 +27,11 @@ var ErrInvalidOptions = errors.New("invalid options provided")
 
 type services struct {
 	githubOauthClient *github_oauth.Client
-	postgresPool *pgxpool.Pool
-	usersRepo *postgres.UsersRepository
-	authTokenManager *auth.SessionManager
+	postgresPool      *pgxpool.Pool
+	usersRepo         *postgres.UsersRepository
+	authTokenManager  *auth.SessionManager
 	refreshTokensRepo *postgres.RefreshTokensRepository
-	hasher *hasher.HMACSHA256Hasher
+	hasher            *hasher.HMACSHA256Hasher
 }
 
 func (s *services) GetGituhbOauthClient() *github_oauth.Client {
@@ -170,7 +170,7 @@ func init() {
 	cobra.CheckErr(viper.BindPFlag("server.port", serveCmd.Flags().Lookup("port")))
 }
 
-// bindVipersEnvsFromStruct is a bit of a workaround for dodgy viper behaviour. 
+// bindVipersEnvsFromStruct is a bit of a workaround for dodgy viper behaviour.
 // One would assume that "AutomaticEnv" does this, but thats not actually very
 // automatic, and we still need to bind each env to the relevant key aparrently.
 // This does so by recursing through the config struct and binding each key.
@@ -196,12 +196,11 @@ func bindVipersEnvsFromStruct(prefix string, t reflect.Type) {
 	}
 }
 
-
 func loadConfig() {
 	// Tell viper to replace . in nested path with underscores
 	// e.g. logging.level becomes LOGGING_LEVEL
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	
+
 	viper.SetEnvPrefix("panoptes")
 	viper.AutomaticEnv()
 	viper.SetConfigFile(cfgFilePath)

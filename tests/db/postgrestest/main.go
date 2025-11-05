@@ -92,15 +92,15 @@ func poolForSchema(ctx context.Context, basePool *pgxpool.Pool, schema string) (
 }
 
 func runMigrationsForSchema(ctx context.Context, pool *pgxpool.Pool, schema string) error {
-	// _, err := pool.Exec(ctx, fmt.Sprintf("SET search_path TO %s;", schema))
-	// if err != nil {
-	// 	return err
-	// }
-	
-	dir := "/app/etc/postgres/migrations"
+	migrationsPath, found := os.LookupEnv("TEST_MIGRATIONS_PATH")
+
+	if !found {
+		log.Fatalf("TEST_MIGRATIONS_PATH must be set to run migrations!")
+	}
+
 	files := []string{}
 
-	err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(migrationsPath, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}

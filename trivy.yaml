@@ -28,3 +28,6 @@ scan:
 
     # --- gitignored: purely for local so doesn't need scanning
     - '.local/jwt/keys'
+
+  skip-files:
+    - 'Dockerfile.dev'

@@ -270,7 +270,7 @@ func (c *AuthController) Refresh(ctx context.Context, req *RefreshRequest) (*Ses
 // TODO: this looks awful in the spec viewer, see if we can improve it.
 type LogoutResponse struct {
 	SetCookie []http.Cookie `header:"Set-Cookie" description:"Cookies set by the backend: auth_token (httpOnly, JWT) and csrf_token (JS-readable, for X-CSRF-Token header)"`
-	Status int
+	Status    int
 }
 
 func (c *AuthController) Logout(ctx context.Context, req *RefreshRequest) (*LogoutResponse, error) {
@@ -315,4 +315,3 @@ func (c *AuthController) Logout(ctx context.Context, req *RefreshRequest) (*Logo
 		Value: req.RefreshToken,
 	})
 }
-

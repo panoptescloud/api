@@ -15,12 +15,11 @@ type RefreshToken struct {
 }
 
 type Session struct {
-	JWT string
-	RefreshToken RefreshToken
-	CSRFToken string
-	UserID string
-	IssuedAt time.Time
-	JWTExpiresAt time.Time
+	JWT                   string
+	RefreshToken          RefreshToken
+	CSRFToken             string
+	UserID                string
+	IssuedAt              time.Time
+	JWTExpiresAt          time.Time
 	RefreshTokenExpiresAt time.Time
-
 }

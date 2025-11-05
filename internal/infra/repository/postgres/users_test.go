@@ -44,7 +44,6 @@ func assertUserEqualsRow(t *testing.T, user *users.User, dbRow []any) {
 	require.Equal(t, user.GithubIdentity().NodeID().String(), dbRow[3].(string))
 }
 
-
 func Test_UsersRepository_ByGithubNodeId_empty_DB(t *testing.T) {
 	pool := postgrestest.PrepareDBForTest(t, pool, true)
 	defer pool.Close()
