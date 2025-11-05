@@ -8,6 +8,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/labstack/gommon/log"
 	"github.com/panoptescloud/api/tests/db/postgrestest"
 )
 
@@ -25,7 +26,7 @@ func TestMain(m *testing.M) {
 	exitCode := m.Run()
 
 	if err := container.Terminate(ctx); err != nil {
-		panic(err)
+		log.Errorf("failed to terminate container")
 	}
 
 	os.Exit(exitCode)

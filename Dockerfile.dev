@@ -1,4 +1,4 @@
-FROM golang:1.25 AS dev
+FROM golang:1.25
 
 RUN go install github.com/air-verse/air@latest
 RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
@@ -19,15 +19,5 @@ RUN (cd /tmp && curl -Lo ./mockery.tar.gz https://github.com/vektra/mockery/rele
     && mv mockery /usr/local/bin \
     && rm -rf /tmp/* \
     )
-
-# --- Add a non-root user and group ---
-RUN groupadd -r appuser && useradd -r -g appuser -d /home/appuser -m appuser
-
-RUN mkdir -p /go/pkg /go/bin /app \
-    && chown -R appuser:appuser /go /app /usr/local/bin /home/appuser
-
-ENV GOPATH=/go
-
-USER appuser
 
 ENTRYPOINT ["/entrypoint.sh"]
