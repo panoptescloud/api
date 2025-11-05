@@ -48,3 +48,9 @@ extensions:
 - name: "jwt:gen-random-secret"
   service: "jwt-keygen"
   command: "/gen_secret_key.sh"
+
+- name: "trivy:scan:fs"
+  service: "trivy-scan"
+  command: "fs"
+  defaultArgs:
+    - "."

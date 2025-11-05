@@ -20,4 +20,14 @@ RUN (cd /tmp && curl -Lo ./mockery.tar.gz https://github.com/vektra/mockery/rele
     && rm -rf /tmp/* \
     )
 
+# --- Add a non-root user and group ---
+RUN groupadd -r appuser && useradd -r -g appuser -d /home/appuser -m appuser
+
+RUN mkdir -p /go/pkg /go/bin /app \
+    && chown -R appuser:appuser /go /app /usr/local/bin /home/appuser
+
+ENV GOPATH=/go
+
+USER appuser
+
 ENTRYPOINT ["/entrypoint.sh"]

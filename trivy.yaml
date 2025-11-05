@@ -23,5 +23,8 @@ scan:
    - misconfig
 
   skip-dirs:
-    # No need to scan this really, it's just a playground right now
+    # Misc
     - 'hack'
+
+    # --- gitignored: purely for local so doesn't need scanning
+    - '.local/jwt/keys'

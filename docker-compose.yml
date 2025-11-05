@@ -103,7 +103,13 @@ services:
     entrypoint: /generic_entrypoint.sh
     working_dir: /target
 
-
+  trivy-scan:
+    profiles:
+      - manual
+    image: aquasec/trivy
+    volumes: 
+      - .:/src
+    working_dir: /src
 
 volumes:
   # Persistent storage for postgres
