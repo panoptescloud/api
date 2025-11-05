@@ -1,12 +1,13 @@
 package config
 
 type PostgresSSLMode string
+
 const (
-	PostgresSSLModeDisable PostgresSSLMode = "disable"
-	PostgresSSLModeAllow PostgresSSLMode = "allow"
-	PostgresSSLModePrefer PostgresSSLMode = "prefer"
-	PostgresSSLModeRequire PostgresSSLMode = "require"
-	PostgresSSLModeVerifyCA PostgresSSLMode = "verify-ca"
+	PostgresSSLModeDisable    PostgresSSLMode = "disable"
+	PostgresSSLModeAllow      PostgresSSLMode = "allow"
+	PostgresSSLModePrefer     PostgresSSLMode = "prefer"
+	PostgresSSLModeRequire    PostgresSSLMode = "require"
+	PostgresSSLModeVerifyCA   PostgresSSLMode = "verify-ca"
 	PostgresSSLModeVerifyFull PostgresSSLMode = "verify-full"
 )
 
@@ -35,14 +36,14 @@ type LoggingConfig struct {
 }
 
 type PostgresConfig struct {
-	Host string
-	Username string
-	Password string
-	Port uint16
-	DBName string `yaml:"dbName"`
-	MaxConnections int32 `yaml:"maxConnections"`
-	MinConnections int32 `yaml:"minConnections"`
-	SSLMode PostgresSSLMode `yaml:"sslMode"`
+	Host           string
+	Username       string
+	Password       string
+	Port           uint16
+	DBName         string          `yaml:"dbName"`
+	MaxConnections int32           `yaml:"maxConnections"`
+	MinConnections int32           `yaml:"minConnections"`
+	SSLMode        PostgresSSLMode `yaml:"sslMode"`
 }
 
 type DBConfig struct {
@@ -51,20 +52,20 @@ type DBConfig struct {
 
 type JWTConfig struct {
 	PrivateKeyFile string `yaml:"privateKeyFile"`
-	PublicKeyFile string `yaml:"publicKeyFile"`
+	PublicKeyFile  string `yaml:"publicKeyFile"`
 }
 
 type AuthConfig struct {
-	JWT JWTConfig `yaml:"jwt"`
-	HMACKey string `yaml:"hmacKey"`
+	JWT     JWTConfig `yaml:"jwt"`
+	HMACKey string    `yaml:"hmacKey"`
 }
 
 type Config struct {
 	Server  ServerConfig
 	Logging LoggingConfig
 	Github  GithubConfig `yaml:"github"`
-	DB DBConfig `yaml:"db"`
-	Auth AuthConfig `yaml:"auth"`
+	DB      DBConfig     `yaml:"db"`
+	Auth    AuthConfig   `yaml:"auth"`
 }
 
 func (c *Config) GetServerPort() uint16 {
@@ -94,7 +95,6 @@ func (c *Config) GetGithubOauthClientId() string {
 func (c *Config) GetGithubOauthClientSecret() string {
 	return c.Github.Oauth.ClientSecret
 }
-
 
 func (c *Config) GetAuthJWTPublicKeyPath() string {
 	return c.Auth.JWT.PublicKeyFile
@@ -129,20 +129,18 @@ func Default() *Config {
 		},
 		DB: DBConfig{
 			Postgres: PostgresConfig{
-				Host: "",
-				Username: "",
-				Password: "",
-				Port: 5432,
-				DBName: "panoptes",
+				Host:           "",
+				Username:       "",
+				Password:       "",
+				Port:           5432,
+				DBName:         "panoptes",
 				MaxConnections: 10,
 				MinConnections: 3,
-				SSLMode: PostgresSSLModeRequire,
+				SSLMode:        PostgresSSLModeRequire,
 			},
 		},
 		Auth: AuthConfig{
-			JWT: JWTConfig{
-
-			},
+			JWT:     JWTConfig{},
 			HMACKey: "",
 		},
 	}

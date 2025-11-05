@@ -11,15 +11,13 @@ import (
 	"github.com/panoptescloud/api/tests/db/postgrestest"
 )
 
-var pool     *pgxpool.Pool
-
+var pool *pgxpool.Pool
 
 func TestMain(m *testing.M) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Minute)
 	defer cancel()
 
 	container, basePool := postgrestest.SetupTestDB()
-
 
 	pool = basePool
 	defer pool.Close()
@@ -58,4 +56,3 @@ func createUserWithGithubUser(pool *pgxpool.Pool, id uuid.UUID, name string, ema
 
 	return err
 }
-

@@ -34,6 +34,6 @@ func (h *HMACSHA256Hasher) Hash(input string) (dto.HashedValue, error) {
 
 	return dto.HashedValue{
 		Original: point.To(input),
-		Value: base64.RawURLEncoding.EncodeToString(sum),
+		Value:    base64.RawURLEncoding.EncodeToString(sum),
 	}, nil
 }

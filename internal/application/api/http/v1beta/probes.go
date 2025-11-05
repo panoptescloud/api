@@ -24,7 +24,7 @@ func (c *ProbesController) RegisterRoutes(api huma.API, debugErrorsEnabled bool)
 			"Probes",
 		},
 		Metadata: map[string]any{
-			operations.OptDisableAllDefaultResponses: true,
+			operations.OptDisableAllDefaultResponses:   true,
 			operations.OptDisableDefaultAuthentication: true,
 		},
 	}, ErrorHandler(debugErrorsEnabled, c.Startup))

@@ -9,8 +9,8 @@ import (
 )
 
 func NewPool(poolConfig *config.PostgresConfig) (*pgxpool.Pool, error) {
-	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s", 
-		poolConfig.Username, 
+	dsn := fmt.Sprintf("postgres://%s:%s@%s:%d/%s?sslmode=%s",
+		poolConfig.Username,
 		poolConfig.Password,
 		poolConfig.Host,
 		poolConfig.Port,
@@ -27,7 +27,5 @@ func NewPool(poolConfig *config.PostgresConfig) (*pgxpool.Pool, error) {
 	config.MaxConns = int32(poolConfig.MaxConnections)
 	config.MinConns = int32(poolConfig.MinConnections)
 
-
 	return pgxpool.NewWithConfig(context.Background(), config)
 }
-

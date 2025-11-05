@@ -3,9 +3,9 @@ package users
 import "github.com/panoptescloud/api/internal/domain/users"
 
 type CreateUser struct {
-	ID users.UserID
-	Name string
-	Email string
+	ID           users.UserID
+	Name         string
+	Email        string
 	GithubNodeID string
 }
 
@@ -13,7 +13,7 @@ func (cmd CreateUser) GetName() string {
 	return "users.command.create_user"
 }
 
-func (uh *UserCmdHandler) CreateUser(dto CreateUser) (error) {
+func (uh *UserCmdHandler) CreateUser(dto CreateUser) error {
 	email, err := users.NewEmail(dto.Email)
 	if err != nil {
 		return err
@@ -29,7 +29,6 @@ func (uh *UserCmdHandler) CreateUser(dto CreateUser) (error) {
 		email,
 		githubIdentity,
 	)
-
 
 	return uh.userRepo.Save(user)
 }

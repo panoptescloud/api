@@ -48,7 +48,6 @@ func NewUserID(v string) (UserID, error) {
 	}, nil
 }
 
-
 // --- Email
 type Email struct {
 	value string
@@ -67,7 +66,6 @@ func NewEmail(value string) (Email, error) {
 	return Email{value: value}, nil
 }
 
-
 // --- Name
 type Name struct {
 	value string
@@ -78,12 +76,11 @@ func (e Name) String() string {
 }
 
 // No validation for now
-func NewName(value string) (Name) {
+func NewName(value string) Name {
 	return Name{
 		value: value,
 	}
 }
-
 
 // --- GithubUserNodeId
 type GithubUserNodeId struct {
@@ -95,7 +92,7 @@ func (e GithubUserNodeId) String() string {
 }
 
 // No validation for now
-func NewGithubUserNodeId(value string) (GithubUserNodeId) {
+func NewGithubUserNodeId(value string) GithubUserNodeId {
 	return GithubUserNodeId{
 		value: value,
 	}

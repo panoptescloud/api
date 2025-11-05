@@ -240,7 +240,7 @@ func (srv *Server) Shutdown(ctx context.Context) error {
 	return srv.echo.Shutdown(ctx)
 }
 
-//TODO consts for security schemes
+// TODO consts for security schemes
 func requiresRefreshToken(ctx huma.Context) bool {
 	sec := ctx.Operation().Security
 

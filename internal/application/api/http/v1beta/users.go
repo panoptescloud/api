@@ -16,7 +16,7 @@ type MeResponseBody struct {
 
 type MeResponse struct {
 	Status int
-	Body MeResponseBody
+	Body   MeResponseBody
 }
 
 type UsersController struct{}

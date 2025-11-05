@@ -96,7 +96,7 @@ func runMigrationsForSchema(ctx context.Context, pool *pgxpool.Pool, schema stri
 	// if err != nil {
 	// 	return err
 	// }
-	
+
 	dir := "/app/etc/postgres/migrations"
 	files := []string{}
 

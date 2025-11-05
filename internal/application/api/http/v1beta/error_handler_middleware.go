@@ -25,13 +25,12 @@ func ErrorHandler[Req any, Resp any](debugErrors bool, handler func(context.Cont
 			return resp, buildUnauthorisedError(e.Message)
 
 		default:
-			// TODO: outside dev, return a generic errors message instead of the 
+			// TODO: outside dev, return a generic errors message instead of the
 			// actual error as it appears in the response
 			return resp, err
 		}
 	}
 }
-
 
 func buildUnauthorisedError(msg string) huma.StatusError {
 	return huma.Error401Unauthorized(msg)

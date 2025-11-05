@@ -19,9 +19,9 @@ func NewGithubIdentity(nodeID GithubUserNodeId) GithubIdentity {
 }
 
 type User struct {
-	id UserID
-	name Name
-	email Email
+	id             UserID
+	name           Name
+	email          Email
 	githubIdentity GithubIdentity
 }
 
@@ -47,16 +47,15 @@ func (u *User) GithubIdentity() GithubIdentity {
 
 func NewUser(id UserID, name Name, email Email, githubIdentity GithubIdentity) *User {
 	return &User{
-		id: id, 
-		name: name,
-		email: email,
+		id:             id,
+		name:           name,
+		email:          email,
 		githubIdentity: githubIdentity,
 	}
 
-	
 }
 
-// HydrateUser is designed to bypass any checks for invariants, typically used 
+// HydrateUser is designed to bypass any checks for invariants, typically used
 // during tests or when hydrating from a DB.
 func HydrateUser(
 	id string,

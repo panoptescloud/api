@@ -43,20 +43,20 @@ func Test_GettersAreWorking(t *testing.T) {
 		},
 		Github: config.GithubConfig{
 			Oauth: config.GithubOauthConfig{
-				ClientId: "github_oauth_client_id",
+				ClientId:     "github_oauth_client_id",
 				ClientSecret: "github_oauth_client_secret",
 			},
 		},
 		DB: config.DBConfig{
 			Postgres: config.PostgresConfig{
-				Host: "postgres_host",
-				Username: "postgres_username",
-				Password: "postgres_password",
-				Port: 8746,
-				DBName: "postgres_db_name",
+				Host:           "postgres_host",
+				Username:       "postgres_username",
+				Password:       "postgres_password",
+				Port:           8746,
+				DBName:         "postgres_db_name",
 				MaxConnections: 17,
 				MinConnections: 15,
-				SSLMode: config.PostgresSSLModeVerifyFull,
+				SSLMode:        config.PostgresSSLModeVerifyFull,
 			},
 		},
 	}

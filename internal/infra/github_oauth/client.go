@@ -100,31 +100,31 @@ func (c *Client) GetToken(code string) (string, error) {
 }
 
 func (c *Client) getPrimaryEmail(ctx context.Context, ghClient *github.Client) (string, error) {
-    opt := &github.ListOptions{
-        Page:    1,
-        PerPage: 100,
-    }
+	opt := &github.ListOptions{
+		Page:    1,
+		PerPage: 100,
+	}
 
-    for {
-        emails, resp, err := ghClient.Users.ListEmails(ctx, opt)
-        if err != nil {
-            return "", err
-        }
+	for {
+		emails, resp, err := ghClient.Users.ListEmails(ctx, opt)
+		if err != nil {
+			return "", err
+		}
 
-        for _, e := range emails {
-            if e.GetPrimary() && e.GetVerified() {
-                return e.GetEmail(), nil
-            }
-        }
+		for _, e := range emails {
+			if e.GetPrimary() && e.GetVerified() {
+				return e.GetEmail(), nil
+			}
+		}
 
-        if resp.NextPage == 0 {
-            break
-        }
-        opt.Page = resp.NextPage
-    }
+		if resp.NextPage == 0 {
+			break
+		}
+		opt.Page = resp.NextPage
+	}
 
-    // No primary email found
-    return "", domain.ErrMustHaveVerfiiedEmailAddress{}
+	// No primary email found
+	return "", domain.ErrMustHaveVerfiiedEmailAddress{}
 }
 
 func (c *Client) GetProfile(accessToken string) (users.GithubProfile, error) {
