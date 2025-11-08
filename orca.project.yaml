@@ -22,10 +22,25 @@ extensions:
   service: "app"
   command: "go mod tidy"
 
+# Unit tests
 - name: "go:test"
   service: "app"
   command: "./scripts/test.sh"
   defaultArgs: [ "./..." ]
+
+# - name: "go:test:int"
+#   service: "app"
+#   command: "./scripts/test.sh"
+#   defaultArgs: [ "-tags=integration", "./..." ]
+
+# - name: "go:test:feat"
+#   service: "app"
+#   command: "./scripts/test.sh"
+#   defaultArgs: [ "-tags=feature", "./..." ]
+
+- name: "mocks:gen"
+  service: "app"
+  command: "mockery"
 
 - name: "migrate:up"
   service: "migrate"
@@ -54,3 +69,8 @@ extensions:
   command: "fs"
   defaultArgs:
     - "."
+
+# Delete any docker containers created by testcontainers. Sometimes panics can 
+# leave things hanging. 
+# TODO: Sort out extensions so they can run on the host.
+# docker ps -a -q --filter "label=org.testcontainers=true" | xargs -r docker rm -f

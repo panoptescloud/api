@@ -6,7 +6,7 @@ import (
 	"encoding/base64"
 	"fmt"
 
-	"github.com/panoptescloud/api/pkg/dto"
+	"github.com/panoptescloud/api/internal/common/dto"
 	"github.com/panoptescloud/api/pkg/util/point"
 )
 

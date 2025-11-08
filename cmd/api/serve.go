@@ -10,16 +10,15 @@ import (
 
 	stdhttp "net/http"
 
-	"github.com/panoptescloud/api/internal/application/api/http"
-	"github.com/panoptescloud/api/internal/application/api/http/v1beta"
+	"github.com/panoptescloud/api/internal/api/http"
+	"github.com/panoptescloud/api/internal/api/http/v1beta"
 	"github.com/panoptescloud/api/internal/infra/github_oauth"
 	"github.com/spf13/cobra"
 )
 
 func handleServe(_ *cobra.Command, _ []string) error {
 	api := http.NewServer(
-		uint16(appCfg.GetServerPort()),
-		svcContainer.GetAuthTokenManager(),
+		svcContainer.GetSessionManager(),
 		logger.With("component", "http-server"),
 	)
 
@@ -33,10 +32,12 @@ func handleServe(_ *cobra.Command, _ []string) error {
 				appCfg.GetGithubOauthClientSecret(),
 				logger.With("component", "github-oauth-client"),
 			),
-			svcContainer.GetAuthTokenManager(),
+			svcContainer.GetSessionManager(),
 			logger.With("component", "auth-controller.v1beta"),
 		),
 	}
+
+	api.Initialise(controllers)
 
 	serverErrors := make(chan error, 1)
 
@@ -45,7 +46,7 @@ func handleServe(_ *cobra.Command, _ []string) error {
 		// shutdown is called, the start method should return this at that point,
 		// but it's not an error we actually want to handle, as it's part of our
 		// graceful shutdown.
-		if err := api.Start(controllers); err != nil && !errors.Is(err, stdhttp.ErrServerClosed) {
+		if err := api.Start(uint16(appCfg.GetServerPort())); err != nil && !errors.Is(err, stdhttp.ErrServerClosed) {
 			serverErrors <- err
 		}
 	}()

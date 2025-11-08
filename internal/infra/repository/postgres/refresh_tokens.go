@@ -6,8 +6,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/panoptescloud/api/internal/common/dto"
 	"github.com/panoptescloud/api/internal/infra/repository/postgres/db"
-	"github.com/panoptescloud/api/pkg/dto"
 )
 
 type RefreshTokensRepository struct {

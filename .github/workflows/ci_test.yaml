@@ -13,7 +13,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     env:
-      TEST_MIGRATIONS_PATH: ${{ github.workspace }}/etc/postgres/migrations
+      TEST_APP_ROOT: ${{ github.workspace }}
       TESTCONTAINERS_RYUK_DISABLED: true
     steps:
       - name: Checkout

@@ -7,7 +7,7 @@ services:
       AIR_DEBUG: ${AIR_DEBUG:-false}
       # See: https://github.com/testcontainers/testcontainers-go/issues/2477#issuecomment-2417815745
       TESTCONTAINERS_RYUK_DISABLED: true
-      TEST_MIGRATIONS_PATH: "/app/etc/postgres/migrations"
+      TEST_APP_ROOT: "/app"
       # See .local/docker/watch.sh
       # This is the subcommand of the binary we wanna run
       APP_CMD: serve

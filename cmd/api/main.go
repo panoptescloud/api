@@ -9,11 +9,12 @@ import (
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/panoptescloud/api/internal/application/auth"
+	"github.com/panoptescloud/api/internal/api/auth"
+	"github.com/panoptescloud/api/internal/infra/config"
 	"github.com/panoptescloud/api/internal/infra/github_oauth"
 	"github.com/panoptescloud/api/internal/infra/hasher"
 	"github.com/panoptescloud/api/internal/infra/repository/postgres"
-	"github.com/panoptescloud/api/pkg/config"
+	userspostgres "github.com/panoptescloud/api/internal/users/infra/postgres"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -28,8 +29,8 @@ var ErrInvalidOptions = errors.New("invalid options provided")
 type services struct {
 	githubOauthClient *github_oauth.Client
 	postgresPool      *pgxpool.Pool
-	usersRepo         *postgres.UsersRepository
-	authTokenManager  *auth.SessionManager
+	usersRepo         *userspostgres.UsersRepository
+	sessionManager    *auth.SessionManager
 	refreshTokensRepo *postgres.RefreshTokensRepository
 	hasher            *hasher.HMACSHA256Hasher
 }
@@ -62,12 +63,12 @@ func (s *services) GetPostgresPool() *pgxpool.Pool {
 	return s.postgresPool
 }
 
-func (s *services) GetUsersRepo() *postgres.UsersRepository {
+func (s *services) GetUsersRepo() *userspostgres.UsersRepository {
 	if s.usersRepo != nil {
 		return s.usersRepo
 	}
 
-	s.usersRepo = postgres.NewUsersRepository(
+	s.usersRepo = userspostgres.NewUsersRepository(
 		s.GetPostgresPool(),
 	)
 
@@ -98,9 +99,9 @@ func (s *services) GetHasher() *hasher.HMACSHA256Hasher {
 	return s.hasher
 }
 
-func (s *services) GetAuthTokenManager() *auth.SessionManager {
-	if s.authTokenManager != nil {
-		return s.authTokenManager
+func (s *services) GetSessionManager() *auth.SessionManager {
+	if s.sessionManager != nil {
+		return s.sessionManager
 	}
 
 	svc, err := auth.NewSessionManager(
@@ -112,9 +113,9 @@ func (s *services) GetAuthTokenManager() *auth.SessionManager {
 
 	cobra.CheckErr(err)
 
-	s.authTokenManager = svc
+	s.sessionManager = svc
 
-	return s.authTokenManager
+	return s.sessionManager
 }
 
 func handleGroupedCommand(cmd *cobra.Command, args []string) error {

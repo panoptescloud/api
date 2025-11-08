@@ -11,8 +11,8 @@ import (
 	"net/http"
 
 	"github.com/google/go-github/v69/github"
-	"github.com/panoptescloud/api/internal/domain"
-	"github.com/panoptescloud/api/internal/domain/users"
+	"github.com/panoptescloud/api/internal/common"
+	usersdomain "github.com/panoptescloud/api/internal/users/domain"
 	"golang.org/x/oauth2"
 )
 
@@ -88,7 +88,7 @@ func (c *Client) GetToken(code string) (string, error) {
 
 	if tokenResponse.ErrorCode != "" {
 		if tokenResponse.ErrorCode == "bad_verification_code" {
-			return "", domain.ErrUnauthorised{
+			return "", common.ErrUnauthorised{
 				Message: tokenResponse.ErrorDescription,
 			}
 		}
@@ -124,10 +124,10 @@ func (c *Client) getPrimaryEmail(ctx context.Context, ghClient *github.Client) (
 	}
 
 	// No primary email found
-	return "", domain.ErrMustHaveVerfiiedEmailAddress{}
+	return "", common.ErrMustHaveVerfiiedEmailAddress{}
 }
 
-func (c *Client) GetProfile(accessToken string) (users.GithubProfile, error) {
+func (c *Client) GetProfile(accessToken string) (usersdomain.GithubProfile, error) {
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
 		&oauth2.Token{AccessToken: accessToken},
@@ -142,7 +142,7 @@ func (c *Client) GetProfile(accessToken string) (users.GithubProfile, error) {
 	c.logger.Debug("github profile response", "user", user, "status-code", resp.StatusCode)
 
 	if err != nil {
-		return users.GithubProfile{}, err
+		return usersdomain.GithubProfile{}, err
 	}
 
 	// The email may not come back in the profile if the user doesn't share it
@@ -151,10 +151,10 @@ func (c *Client) GetProfile(accessToken string) (users.GithubProfile, error) {
 	email, err := c.getPrimaryEmail(ctx, ghClient)
 
 	if err != nil {
-		return users.GithubProfile{}, err
+		return usersdomain.GithubProfile{}, err
 	}
 
-	return users.GithubProfile{
+	return usersdomain.GithubProfile{
 		NodeID: user.GetNodeID(),
 		Name:   user.GetLogin(),
 		Email:  email,

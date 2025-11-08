@@ -2,6 +2,8 @@ FROM golang:1.25
 
 RUN go install github.com/air-verse/air@latest
 RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+RUN go install github.com/vektra/mockery/v3@v3.5.5
+
 
 COPY ./.local/docker/watch.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
