@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/panoptescloud/api/internal/application/bus"
-	"github.com/panoptescloud/api/internal/application/users"
+	"github.com/panoptescloud/api/internal/common/bus"
+	usersapp "github.com/panoptescloud/api/internal/users/application"
+	"github.com/spf13/cobra"
 )
 
 var globalBus *bus.Bus
@@ -14,17 +15,7 @@ func buildCommandBus() *bus.Bus {
 
 	globalBus = bus.New()
 
-	// --- Users
-	userQueryHandler := users.NewUserQueryHandler(
-		svcContainer.GetUsersRepo(),
-	)
-
-	userCmdHandler := users.NewUserCmdHandler(
-		svcContainer.GetUsersRepo(),
-	)
-
-	bus.RegisterCommand(globalBus, userCmdHandler.CreateUser)
-	bus.RegisterQuery(globalBus, userQueryHandler.GetUserByGithubNodeID)
+	cobra.CheckErr(usersapp.RegisterToBus(globalBus, svcContainer.GetUsersRepo()))
 
 	return globalBus
 }

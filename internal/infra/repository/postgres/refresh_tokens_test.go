@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/panoptescloud/api/internal/common/dto"
 	"github.com/panoptescloud/api/internal/infra/repository/postgres"
-	"github.com/panoptescloud/api/pkg/dto"
 	"github.com/panoptescloud/api/tests/db/postgrestest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

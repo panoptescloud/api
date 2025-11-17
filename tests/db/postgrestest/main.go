@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/jackc/pgx/v5/pgxpool"
+	testutil "github.com/panoptescloud/api/tests/util"
 	tcpostgres "github.com/testcontainers/testcontainers-go/modules/postgres"
 )
 
@@ -92,11 +93,9 @@ func poolForSchema(ctx context.Context, basePool *pgxpool.Pool, schema string) (
 }
 
 func runMigrationsForSchema(ctx context.Context, pool *pgxpool.Pool, schema string) error {
-	migrationsPath, found := os.LookupEnv("TEST_MIGRATIONS_PATH")
+	appRoot := testutil.GetAppRoot()
 
-	if !found {
-		log.Fatalf("TEST_MIGRATIONS_PATH must be set to run migrations!")
-	}
+	migrationsPath := fmt.Sprintf("%s/etc/postgres/migrations", appRoot)
 
 	files := []string{}
 

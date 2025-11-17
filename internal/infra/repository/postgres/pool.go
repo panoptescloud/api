@@ -5,7 +5,8 @@ import (
 	"fmt"
 
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/panoptescloud/api/pkg/config"
+	// TODO: Address this, shouldn't be coming directly from here
+	"github.com/panoptescloud/api/internal/infra/config"
 )
 
 func NewPool(poolConfig *config.PostgresConfig) (*pgxpool.Pool, error) {
