@@ -16,3 +16,11 @@ sql:
         package: "db"
         out: "internal/users/infra/postgres/db"
         sql_package: "pgx/v5"
+  - engine: "postgresql"
+    queries: "internal/organisations/infra/postgres/queries.sql"
+    schema: "etc/postgres/migrations"
+    gen:
+      go:
+        package: "db"
+        out: "internal/organisations/infra/postgres/db"
+        sql_package: "pgx/v5"

@@ -20,10 +20,18 @@ func (err ErrUnauthorised) Error() string {
 	return "the current user is not authorized to perform this action"
 }
 
+// TODO: the errors below here should be in the relevant domain, not common!
+
 type ErrEmailAlreadyInUse struct{}
 
 func (err ErrEmailAlreadyInUse) Error() string {
 	return "the chosen email is already in use"
+}
+
+type ErrOrganisationNameAlreadyInUse struct{}
+
+func (err ErrOrganisationNameAlreadyInUse) Error() string {
+	return "the chosen organisation name is already in use"
 }
 
 type ErrMustHaveVerfiiedEmailAddress struct{}

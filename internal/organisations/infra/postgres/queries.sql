@@ -1,0 +1,23 @@
+-- name: GetOrganisationByID :one
+SELECT 
+    *
+FROM 
+    organisations o
+WHERE o.id=$1;
+
+-- name: GetOrganisationMembers :many
+SELECT * FROM organisation_members WHERE organisation_id = $1;
+
+-- name: UpsertOrganisation :exec
+INSERT INTO organisations (id, name)
+VALUES ($1, $2)
+ON CONFLICT (id)
+DO UPDATE
+SET name = EXCLUDED.name;
+
+-- name: UpsertOrganisationMember :exec
+INSERT INTO organisation_members (organisation_id, member_id, "role")
+VALUES ($1, $2, $3)
+ON CONFLICT (organisation_id, member_id)
+DO UPDATE
+SET "role" = EXCLUDED.role;

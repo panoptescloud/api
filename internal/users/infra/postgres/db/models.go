@@ -15,6 +15,22 @@ type GithubUser struct {
 	NodeID string
 }
 
+type Organisation struct {
+	ID pgtype.UUID
+	// The name of the organisation, must be unique across the system.
+	Name string
+}
+
+type OrganisationMember struct {
+	// The ID of the organisation to which this membership applies.
+	OrganisationID pgtype.UUID
+	// The ID of the user that is a member of this organisation. Should be an existing user, but it crosses a bounded context so no foreign keys.\
+	// We may later change the storage mechanism for users and we shouldn't know anything about that here.
+	MemberID pgtype.UUID
+	// The role that the user has within this organisation.
+	Role string
+}
+
 type RefreshToken struct {
 	ID pgtype.UUID
 	// The ID of the user that is associated with this refresh token.
