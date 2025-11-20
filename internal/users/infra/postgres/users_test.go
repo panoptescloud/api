@@ -3,7 +3,6 @@ package postgres_test
 import (
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/panoptescloud/api/internal/common"
 	usersdomain "github.com/panoptescloud/api/internal/users/domain"
 	"github.com/panoptescloud/api/internal/users/infra/postgres"
@@ -27,17 +26,6 @@ func allUsersQuery() string {
 	INNER JOIN github_users gu 
 	ON u.id=gu.user_id;
 	`
-}
-
-func assertUserEqualsRow(t *testing.T, user *usersdomain.User, dbRow []any) {
-	dbID := uuid.UUID{}
-	idBytes := dbRow[0].([16]uint8)
-	copy(dbID[:], idBytes[:])
-
-	require.Equal(t, user.ID().String(), dbID.String())
-	require.Equal(t, user.Name().String(), dbRow[1].(string))
-	require.Equal(t, user.Email().String(), dbRow[2].(string))
-	require.Equal(t, user.GithubIdentity().NodeID().String(), dbRow[3].(string))
 }
 
 func Test_UsersRepository_ByGithubNodeId_empty_DB(t *testing.T) {
@@ -73,6 +61,52 @@ func Test_UsersRepository_ByGithubNodeId_finds_one(t *testing.T) {
 	require.Nil(t, err)
 
 	found, err := repo.ByGithubNodeId("some_node_id")
+
+	require.Nil(t, err)
+	assert.NotNil(t, found)
+	assert.Equal(t, id.String(), found.ID().String())
+	assert.Equal(t, name, found.Name().String())
+	assert.Equal(t, email, found.Email().String())
+	assert.Equal(t, nodeID, found.GithubIdentity().NodeID().String())
+}
+
+func Test_UsersRepository_ByID_empty_DB(t *testing.T) {
+	pool := postgrestest.PrepareDBForTest(t, pool, true)
+	defer pool.Close()
+
+	repo := postgres.NewUsersRepository(pool)
+
+	id, err := usersdomain.GenerateUserID()
+	require.Nil(t, err)
+	found, err := repo.ByID(id)
+
+	assert.Nil(t, found)
+	assert.Nil(t, err)
+}
+
+func Test_UsersRepository_ByID_finds_one(t *testing.T) {
+	pool := postgrestest.PrepareDBForTest(t, pool, true)
+	defer pool.Close()
+
+	repo := postgres.NewUsersRepository(pool)
+
+	id, err := usersdomain.GenerateUserID()
+	require.Nil(t, err)
+
+	name := "josephus miller"
+	email := "josephus@starhelix.org.ceres"
+	nodeID := "some_node_id"
+	err = seed.User(
+		pool,
+		id.WrappedUuid(),
+		name,
+		email,
+		nodeID,
+	)
+
+	require.Nil(t, err)
+
+	found, err := repo.ByID(id)
 
 	require.Nil(t, err)
 	assert.NotNil(t, found)

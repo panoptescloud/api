@@ -21,12 +21,25 @@ func (id MemberID) WrappedUuid() uuid.UUID {
 	return id.value
 }
 
+func NewMemberID(id uuid.UUID) MemberID {
+	return MemberID{
+		value: id,
+	}
+}
+
+// --- MemberRole
 type MemberRole struct {
 	value string
 }
 
 func (mr MemberRole) String() string {
 	return mr.value
+}
+
+func NewMemberRole(role string) MemberRole {
+	return MemberRole{
+		value: role,
+	}
 }
 
 // --- Member
@@ -60,6 +73,13 @@ func HydrateMember(id string, role string) (Member, error) {
 	}, nil
 }
 
+func NewMember(id MemberID, role MemberRole) Member {
+	return Member{
+		id:   id,
+		role: role,
+	}
+}
+
 // --- Members
 type Members []Member
 
@@ -70,6 +90,12 @@ type Name struct {
 
 func (n Name) String() string {
 	return n.value
+}
+
+func NewName(name string) Name {
+	return Name{
+		value: name,
+	}
 }
 
 // --- OrganisationID

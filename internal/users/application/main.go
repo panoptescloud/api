@@ -1,4 +1,3 @@
-// [Users Context]
 package users
 
 import (
@@ -8,6 +7,7 @@ import (
 
 type userQueryRepo interface {
 	ByGithubNodeId(id string) (*domain.User, error)
+	ByID(id domain.UserID) (*domain.User, error)
 }
 
 type UserQueryHandler struct {
@@ -50,6 +50,7 @@ func RegisterToBus(b *bus.Bus, r userRepo) error {
 
 	bus.RegisterCommand(b, cmdHandler.CreateUser)
 	bus.RegisterQuery(b, queryHandler.GetUserByGithubNodeID)
+	bus.RegisterQuery(b, queryHandler.GetUserByID)
 
 	return nil
 }

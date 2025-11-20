@@ -5,6 +5,7 @@ type ViolationType string
 
 const NotEmptyViolationType ViolationType = "not_empty"
 const EmailViolationType ViolationType = "email"
+const MustExistViolationType ViolationType = "must_exist"
 
 type Violation interface {
 	Code() ViolationType
@@ -20,6 +21,12 @@ type EmailViolation struct{}
 
 func (v EmailViolation) Code() ViolationType {
 	return EmailViolationType
+}
+
+type MustExistViolation struct{}
+
+func (v MustExistViolation) Code() ViolationType {
+	return MustExistViolationType
 }
 
 type Violations []Violation

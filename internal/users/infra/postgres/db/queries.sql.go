@@ -42,6 +42,37 @@ func (q *Queries) GetUserByGithubUserNodeID(ctx context.Context, nodeID string) 
 	return i, err
 }
 
+const getUserID = `-- name: GetUserID :one
+SELECT 
+    id, email, name, user_id, node_id
+FROM 
+    users u
+INNER JOIN github_users ghu
+    ON u.id=ghu.user_id
+WHERE u.id=$1
+`
+
+type GetUserIDRow struct {
+	ID     pgtype.UUID
+	Email  string
+	Name   string
+	UserID pgtype.UUID
+	NodeID string
+}
+
+func (q *Queries) GetUserID(ctx context.Context, id pgtype.UUID) (GetUserIDRow, error) {
+	row := q.db.QueryRow(ctx, getUserID, id)
+	var i GetUserIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.Email,
+		&i.Name,
+		&i.UserID,
+		&i.NodeID,
+	)
+	return i, err
+}
+
 const upsertGithubUser = `-- name: UpsertGithubUser :exec
 INSERT INTO github_users (user_id, node_id)
 VALUES ($1, $2)

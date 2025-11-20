@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/panoptescloud/api/internal/common"
+	"github.com/panoptescloud/api/internal/users/domain"
 	usersdomain "github.com/panoptescloud/api/internal/users/domain"
 	"github.com/panoptescloud/api/internal/users/infra/postgres/db"
 )
@@ -21,6 +22,36 @@ func (u *UsersRepository) ByGithubNodeId(id string) (*usersdomain.User, error) {
 	queries := db.New(u.p)
 
 	dbUser, err := queries.GetUserByGithubUserNodeID(context.TODO(), id)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	user, err := usersdomain.HydrateUser(
+		dbUser.ID.String(),
+		dbUser.Name,
+		dbUser.Email,
+		dbUser.NodeID,
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (u *UsersRepository) ByID(id domain.UserID) (*usersdomain.User, error) {
+	queries := db.New(u.p)
+
+	dbUser, err := queries.GetUserID(context.TODO(), pgtype.UUID{
+		Bytes: [16]byte(id.Bytes()),
+		Valid: true,
+	})
 
 	if err != nil {
 		if err == pgx.ErrNoRows {

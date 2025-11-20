@@ -7,6 +7,15 @@ INNER JOIN github_users ghu
     ON u.id=ghu.user_id
 WHERE ghu.node_id=$1;
 
+-- name: GetUserID :one
+SELECT 
+    *
+FROM 
+    users u
+INNER JOIN github_users ghu
+    ON u.id=ghu.user_id
+WHERE u.id=$1;
+
 -- name: UpsertUser :exec
 INSERT INTO users (id, email, name)
 VALUES ($1, $2, $3)
