@@ -103,7 +103,7 @@ func runMigrationsForSchema(ctx context.Context, pool *pgxpool.Pool, schema stri
 		if err != nil {
 			return err
 		}
-		if !d.IsDir() && filepath.Ext(path) == ".sql" {
+		if !d.IsDir() && strings.Contains(filepath.Base(path), "up") && filepath.Ext(path) == ".sql" {
 			files = append(files, path)
 		}
 		return nil

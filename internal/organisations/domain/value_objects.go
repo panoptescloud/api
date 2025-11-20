@@ -88,3 +88,15 @@ func (id OrganisationID) Bytes() []byte {
 func (id OrganisationID) WrappedUuid() uuid.UUID {
 	return id.value
 }
+
+func GenerateOrganisationID() (OrganisationID, error) {
+	id, err := uuid.NewV7()
+
+	if err != nil {
+		return OrganisationID{}, err
+	}
+
+	return OrganisationID{
+		value: id,
+	}, nil
+}

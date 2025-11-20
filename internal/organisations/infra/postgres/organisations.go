@@ -8,7 +8,6 @@ import (
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/panoptescloud/api/internal/common"
 	"github.com/panoptescloud/api/internal/organisations/domain"
 	"github.com/panoptescloud/api/internal/organisations/infra/postgres/db"
 )
@@ -37,7 +36,7 @@ func (u *OrganisationsRepository) ByID(id domain.OrganisationID) (*domain.Organi
 	dbMembers, err := queries.GetOrganisationMembers(context.TODO(), pgOrgID)
 
 	if err != nil {
-		if err != pgx.ErrNoRows {
+		if err == pgx.ErrNoRows {
 			// TODO: better error, this should never happen
 			return nil, errors.New("no members for organisation")
 		}
@@ -95,7 +94,7 @@ func (u *OrganisationsRepository) Save(org *domain.Organisation) error {
 
 		if errors.As(err, &pgErr) {
 			if pgErr.Code == "23505" && pgErr.ConstraintName == "unique_name" {
-				return common.ErrEmailAlreadyInUse{}
+				return domain.ErrNameAlreadyInUse{}
 			}
 		}
 

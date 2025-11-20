@@ -1,36 +1,32 @@
 package postgres_test
 
 import (
-	"context"
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/panoptescloud/api/internal/common"
 	usersdomain "github.com/panoptescloud/api/internal/users/domain"
 	"github.com/panoptescloud/api/internal/users/infra/postgres"
+	dbassert "github.com/panoptescloud/api/tests/db/assert"
 	"github.com/panoptescloud/api/tests/db/postgrestest"
+	"github.com/panoptescloud/api/tests/db/seed"
+	testutil "github.com/panoptescloud/api/tests/util"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-func getAllUsers(t *testing.T, pool *pgxpool.Pool) [][]any {
-	rows, err := pool.Query(context.TODO(), "SELECT u.id, u.name, u.email, ghu.node_id FROM users u INNER JOIN github_users ghu ON u.id=ghu.user_id;")
-
-	require.Nil(t, err)
-
-	defer rows.Close()
-
-	var allRows [][]any
-
-	for rows.Next() {
-		vals, err := rows.Values()
-		require.Nil(t, err)
-		allRows = append(allRows, vals)
-	}
-	require.Nil(t, rows.Err())
-
-	return allRows
+func allUsersQuery() string {
+	return `
+	SELECT
+		u.id,
+		u.name,
+		u.email,
+		gu.user_id as gh_user_id,
+		gu.node_id as gh_node_id
+	FROM users u
+	INNER JOIN github_users gu 
+	ON u.id=gu.user_id;
+	`
 }
 
 func assertUserEqualsRow(t *testing.T, user *usersdomain.User, dbRow []any) {
@@ -62,11 +58,11 @@ func Test_UsersRepository_ByGithubNodeId_finds_one(t *testing.T) {
 
 	repo := postgres.NewUsersRepository(pool)
 
-	id := newUuidV7(t)
+	id := testutil.NewUuidV7(t)
 	name := "josephus miller"
 	email := "josephus@starhelix.org.ceres"
 	nodeID := "some_node_id"
-	err := createUserWithGithubUser(
+	err := seed.User(
 		pool,
 		id,
 		name,
@@ -92,8 +88,9 @@ func Test_UserRepository_Save_new_user(t *testing.T) {
 
 	repo := postgres.NewUsersRepository(pool)
 
+	id := testutil.NewUuidV7(t)
 	user, err := usersdomain.HydrateUser(
-		"019a3f4d-978c-7e15-91ce-7dd2575485f5",
+		id.String(),
 		"josephus miller",
 		"josephus@starhelix.org.ceres",
 		"some_node_id",
@@ -103,12 +100,19 @@ func Test_UserRepository_Save_new_user(t *testing.T) {
 
 	require.Nil(t, repo.Save(user))
 
-	rows := getAllUsers(t, pool)
-
-	require.Len(t, rows, 1, "expected exactly one row in users table")
-
-	row := rows[0]
-	assertUserEqualsRow(t, user, row)
+	dbassert.RowsExist(t, pool, allUsersQuery(), []dbassert.Expectation{
+		dbassert.RowsExpectation{
+			Rows: []map[string]any{
+				{
+					"id":         [16]uint8(id),
+					"name":       "josephus miller",
+					"email":      "josephus@starhelix.org.ceres",
+					"gh_user_id": [16]uint8(id),
+					"gh_node_id": "some_node_id",
+				},
+			},
+		},
+	})
 }
 
 func Test_UserRepository_Save_upsert_user(t *testing.T) {
@@ -117,8 +121,9 @@ func Test_UserRepository_Save_upsert_user(t *testing.T) {
 
 	repo := postgres.NewUsersRepository(pool)
 
+	id := testutil.NewUuidV7(t)
 	user, err := usersdomain.HydrateUser(
-		"019a3f4d-978c-7e15-91ce-7dd2575485f5",
+		id.String(),
 		"josephus miller",
 		"josephus@starhelix.org.ceres",
 		"some_node_id",
@@ -128,16 +133,22 @@ func Test_UserRepository_Save_upsert_user(t *testing.T) {
 
 	require.Nil(t, repo.Save(user))
 
-	rows := getAllUsers(t, pool)
-
-	require.Len(t, rows, 1, "expected exactly one row in users table")
-
-	row := rows[0]
-
-	assertUserEqualsRow(t, user, row)
+	dbassert.RowsExist(t, pool, allUsersQuery(), []dbassert.Expectation{
+		dbassert.RowsExpectation{
+			Rows: []map[string]any{
+				{
+					"id":         [16]uint8(id),
+					"name":       "josephus miller",
+					"email":      "josephus@starhelix.org.ceres",
+					"gh_user_id": [16]uint8(id),
+					"gh_node_id": "some_node_id",
+				},
+			},
+		},
+	})
 
 	updatedUser, err := usersdomain.HydrateUser(
-		"019a3f4d-978c-7e15-91ce-7dd2575485f5",
+		id.String(),
 		"amos burton",
 		"amos@thechurn.com",
 		"other_node_id",
@@ -147,13 +158,19 @@ func Test_UserRepository_Save_upsert_user(t *testing.T) {
 
 	require.Nil(t, repo.Save(updatedUser))
 
-	rows = getAllUsers(t, pool)
-
-	require.Len(t, rows, 1, "expected exactly one row in users table")
-
-	row = rows[0]
-
-	assertUserEqualsRow(t, updatedUser, row)
+	dbassert.RowsExist(t, pool, allUsersQuery(), []dbassert.Expectation{
+		dbassert.RowsExpectation{
+			Rows: []map[string]any{
+				{
+					"id":         [16]uint8(id),
+					"name":       "amos burton",
+					"email":      "amos@thechurn.com",
+					"gh_user_id": [16]uint8(id),
+					"gh_node_id": "other_node_id",
+				},
+			},
+		},
+	})
 }
 
 func Test_UserRepository_Save_duped_email(t *testing.T) {
@@ -162,8 +179,9 @@ func Test_UserRepository_Save_duped_email(t *testing.T) {
 
 	repo := postgres.NewUsersRepository(pool)
 
+	id := testutil.NewUuidV7(t)
 	user, err := usersdomain.HydrateUser(
-		"019a3f4d-978c-7e15-91ce-7dd2575485f5",
+		id.String(),
 		"josephus miller",
 		"josephus@starhelix.org.ceres",
 		"some_node_id",
@@ -173,13 +191,19 @@ func Test_UserRepository_Save_duped_email(t *testing.T) {
 
 	require.Nil(t, repo.Save(user))
 
-	rows := getAllUsers(t, pool)
-
-	require.Len(t, rows, 1, "expected exactly one row in users table")
-
-	row := rows[0]
-
-	assertUserEqualsRow(t, user, row)
+	dbassert.RowsExist(t, pool, allUsersQuery(), []dbassert.Expectation{
+		dbassert.RowsExpectation{
+			Rows: []map[string]any{
+				{
+					"id":         [16]uint8(id),
+					"name":       "josephus miller",
+					"email":      "josephus@starhelix.org.ceres",
+					"gh_user_id": [16]uint8(id),
+					"gh_node_id": "some_node_id",
+				},
+			},
+		},
+	})
 
 	newUser, err := usersdomain.HydrateUser(
 		"019a3f82-7506-762f-bf96-221096985582",
@@ -192,11 +216,17 @@ func Test_UserRepository_Save_duped_email(t *testing.T) {
 
 	require.Equal(t, common.ErrEmailAlreadyInUse{}, repo.Save(newUser))
 
-	rows = getAllUsers(t, pool)
-
-	require.Len(t, rows, 1, "expected exactly one row in users table")
-
-	row = rows[0]
-
-	assertUserEqualsRow(t, user, row)
+	dbassert.RowsExist(t, pool, allUsersQuery(), []dbassert.Expectation{
+		dbassert.RowsExpectation{
+			Rows: []map[string]any{
+				{
+					"id":         [16]uint8(id),
+					"name":       "josephus miller",
+					"email":      "josephus@starhelix.org.ceres",
+					"gh_user_id": [16]uint8(id),
+					"gh_node_id": "some_node_id",
+				},
+			},
+		},
+	})
 }
