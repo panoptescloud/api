@@ -10,6 +10,7 @@ type CreateAPIKey struct {
 	ID             domain.APIKeyID
 	OrganisationID domain.OrganisationID
 	Name           string
+	Token          dto.HashedValue
 }
 
 // TODO: ensure ID is not in use
@@ -64,10 +65,7 @@ func (h OrganisationCmdHandler) CreateAPIKey(cmd CreateAPIKey) error {
 		cmd.ID,
 		cmd.OrganisationID,
 		name,
-		dto.HashedValue{
-			// generate this
-			Value: "blah",
-		},
+		cmd.Token,
 	)
 
 	return h.apiKeyRepo.Save(key)

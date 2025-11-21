@@ -124,7 +124,7 @@ func (c *Client) getPrimaryEmail(ctx context.Context, ghClient *github.Client) (
 	}
 
 	// No primary email found
-	return "", common.ErrMustHaveVerfiiedEmailAddress{}
+	return "", common.ErrMustHaveVerfiedEmailAddress{}
 }
 
 func (c *Client) GetProfile(accessToken string) (usersdomain.GithubProfile, error) {

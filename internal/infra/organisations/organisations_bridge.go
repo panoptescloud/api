@@ -15,7 +15,12 @@ type OrganisationsBridge struct {
 }
 
 func (a *OrganisationsBridge) LoadByUserID(userID uuid.UUID) ([]dto.ActorOrganisation, error) {
-	memberID := domain.NewMemberID(userID)
+	memberID, err := domain.NewMemberID(userID.String())
+
+	if err != nil {
+		return nil, err
+	}
+
 	orgs, err := bus.RunQuery[application.GetOrganisationsForMember, []*domain.Organisation](a.bus, application.GetOrganisationsForMember{
 		ID: memberID,
 	})

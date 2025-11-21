@@ -119,7 +119,7 @@ func (s *services) GetRefreshTokensRepo() *postgres.RefreshTokensRepository {
 	return s.refreshTokensRepo
 }
 
-func (s *services) GetHasher() *hasher.HMACSHA256Hasher {
+func (s *services) GetAuthHasher() *hasher.HMACSHA256Hasher {
 	if s.hasher != nil {
 		return s.hasher
 	}
@@ -138,7 +138,7 @@ func (s *services) GetSessionManager() *auth.SessionManager {
 
 	svc, err := auth.NewSessionManager(
 		s.GetRefreshTokensRepo(),
-		s.GetHasher(),
+		s.GetAuthHasher(),
 		appCfg.GetAuthJWTPrivateKeyPath(),
 		appCfg.GetAuthJWTPublicKeyPath(),
 	)

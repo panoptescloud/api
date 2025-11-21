@@ -9,7 +9,7 @@ type GetOrganisationByID struct {
 }
 
 func (cmd GetOrganisationByID) GetName() string {
-	return "users.command.get_organisation_by_id"
+	return "organisations.command.get_organisation_by_id"
 }
 
 func (h *OrganisationQueryHandler) GetByID(dto GetOrganisationByID) (*domain.Organisation, error) {

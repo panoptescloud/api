@@ -39,6 +39,7 @@ func handleServe(_ *cobra.Command, _ []string) error {
 		v1beta.NewOrganisationsController(
 			globalBus,
 		),
+		v1beta.NewOrganisationAPIKeysController(globalBus, svcContainer.GetAuthHasher()),
 	}
 
 	api.Initialise(controllers)

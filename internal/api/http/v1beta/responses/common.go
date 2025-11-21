@@ -1,6 +1,6 @@
 package responses
 
-type NoContent struct {
+type Empty struct {
 	Status int
 }
 

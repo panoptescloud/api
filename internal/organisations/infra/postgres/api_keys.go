@@ -33,6 +33,61 @@ func (u *APIKeysRepository) ByToken(token dto.HashedValue) (*domain.APIKey, erro
 	return domain.HydrateAPIKey(key.ID.String(), key.Name, key.OrganisationID.String(), key.Token)
 }
 
+func (u *APIKeysRepository) ByID(id domain.APIKeyID) (*domain.APIKey, error) {
+	queries := db.New(u.p)
+
+	key, err := queries.APIKeyByID(context.TODO(), pgtype.UUID{
+		Bytes: [16]byte(id.Bytes()),
+		Valid: true,
+	})
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return domain.HydrateAPIKey(key.ID.String(), key.Name, key.OrganisationID.String(), key.Token)
+}
+
+func (u *APIKeysRepository) AllForOrganisation(id domain.OrganisationID) ([]*domain.APIKey, error) {
+	queries := db.New(u.p)
+
+	dbKeys, err := queries.AllOrganisationAPIKeys(context.TODO(), pgtype.UUID{
+		Bytes: [16]byte(id.Bytes()),
+		Valid: true,
+	})
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return []*domain.APIKey{}, nil
+		}
+
+		return nil, err
+	}
+
+	keys := make([]*domain.APIKey, len(dbKeys))
+
+	for i, dbKey := range dbKeys {
+		k, err := domain.HydrateAPIKey(
+			dbKey.ID.String(),
+			dbKey.Name,
+			dbKey.OrganisationID.String(),
+			dbKey.Token,
+		)
+
+		if err != nil {
+			return nil, err
+		}
+
+		keys[i] = k
+	}
+
+	return keys, nil
+}
+
 func (u *APIKeysRepository) Save(key *domain.APIKey) error {
 	queries := db.New(u.p)
 

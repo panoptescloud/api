@@ -49,7 +49,7 @@ func (cmd CreateOrganisation) Validate(ub userBridge) error {
 }
 
 func (cmd CreateOrganisation) GetName() string {
-	return "users.command.create_organisation"
+	return "organisations.command.create_organisation"
 }
 
 func (h OrganisationCmdHandler) Create(dto CreateOrganisation) error {

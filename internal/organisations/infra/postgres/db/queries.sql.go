@@ -11,6 +11,25 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const aPIKeyByID = `-- name: APIKeyByID :one
+SELECT
+    id, organisation_id, name, token
+FROM organisation_api_keys oak
+WHERE oak.id=$1
+`
+
+func (q *Queries) APIKeyByID(ctx context.Context, id pgtype.UUID) (OrganisationApiKey, error) {
+	row := q.db.QueryRow(ctx, aPIKeyByID, id)
+	var i OrganisationApiKey
+	err := row.Scan(
+		&i.ID,
+		&i.OrganisationID,
+		&i.Name,
+		&i.Token,
+	)
+	return i, err
+}
+
 const aPIKeyByToken = `-- name: APIKeyByToken :one
 SELECT
     id, organisation_id, name, token
@@ -28,6 +47,38 @@ func (q *Queries) APIKeyByToken(ctx context.Context, token string) (Organisation
 		&i.Token,
 	)
 	return i, err
+}
+
+const allOrganisationAPIKeys = `-- name: AllOrganisationAPIKeys :many
+SELECT
+    id, organisation_id, name, token
+FROM organisation_api_keys oak
+WHERE oak.organisation_id=$1
+`
+
+func (q *Queries) AllOrganisationAPIKeys(ctx context.Context, organisationID pgtype.UUID) ([]OrganisationApiKey, error) {
+	rows, err := q.db.Query(ctx, allOrganisationAPIKeys, organisationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []OrganisationApiKey
+	for rows.Next() {
+		var i OrganisationApiKey
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganisationID,
+			&i.Name,
+			&i.Token,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const getOrganisationByID = `-- name: GetOrganisationByID :one

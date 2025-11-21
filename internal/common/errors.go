@@ -34,8 +34,14 @@ func (err ErrOrganisationNameAlreadyInUse) Error() string {
 	return "the chosen organisation name is already in use"
 }
 
-type ErrMustHaveVerfiiedEmailAddress struct{}
+type ErrMustHaveVerfiedEmailAddress struct{}
 
-func (err ErrMustHaveVerfiiedEmailAddress) Error() string {
+func (err ErrMustHaveVerfiedEmailAddress) Error() string {
 	return "the user must have a verified email address in the external oauth provider"
+}
+
+type ErrResourceNotFound struct{}
+
+func (err ErrResourceNotFound) Error() string {
+	return "resource not found"
 }

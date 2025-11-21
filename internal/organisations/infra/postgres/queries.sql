@@ -43,3 +43,15 @@ SELECT
     *
 FROM organisation_api_keys oak
 WHERE oak.token=$1;
+
+-- name: APIKeyByID :one
+SELECT
+    *
+FROM organisation_api_keys oak
+WHERE oak.id=$1;
+
+-- name: AllOrganisationAPIKeys :many
+SELECT
+    *
+FROM organisation_api_keys oak
+WHERE oak.organisation_id=$1;

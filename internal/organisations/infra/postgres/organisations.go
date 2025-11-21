@@ -79,15 +79,19 @@ func (u *OrganisationsRepository) ForMember(id domain.MemberID) ([]*domain.Organ
 
 	if err != nil {
 		if err == pgx.ErrNoRows {
-			return nil, nil
+			return []*domain.Organisation{}, nil
 		}
 
 		return nil, err
 	}
 
+	if len(dbOrgs) == 0 {
+		return []*domain.Organisation{}, nil
+	}
+
 	orgs := make([]*domain.Organisation, len(dbOrgs))
 
-	for _, dbO := range dbOrgs {
+	for i, dbO := range dbOrgs {
 		dbMembers, err := queries.GetOrganisationMembers(context.TODO(), dbO.ID)
 
 		if err != nil {
@@ -101,7 +105,7 @@ func (u *OrganisationsRepository) ForMember(id domain.MemberID) ([]*domain.Organ
 
 		members := make(domain.Members, len(dbMembers))
 
-		for i, dbM := range dbMembers {
+		for j, dbM := range dbMembers {
 			m, err := domain.HydrateMember(
 				dbM.MemberID.String(),
 				dbM.Role,
@@ -112,7 +116,7 @@ func (u *OrganisationsRepository) ForMember(id domain.MemberID) ([]*domain.Organ
 				return nil, err
 			}
 
-			members[i] = m
+			members[j] = m
 		}
 
 		o, err := domain.HydrateOrganisation(dbO.ID.String(), dbO.Name, members)
@@ -120,7 +124,7 @@ func (u *OrganisationsRepository) ForMember(id domain.MemberID) ([]*domain.Organ
 			return nil, err
 		}
 
-		orgs = append(orgs, o)
+		orgs[i] = o
 	}
 
 	return orgs, nil

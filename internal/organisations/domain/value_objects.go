@@ -21,10 +21,16 @@ func (id MemberID) WrappedUuid() uuid.UUID {
 	return id.value
 }
 
-func NewMemberID(id uuid.UUID) MemberID {
-	return MemberID{
-		value: id,
+func NewMemberID(id string) (MemberID, error) {
+	uid, err := uuid.Parse(id)
+
+	if err != nil {
+		return MemberID{}, err
 	}
+
+	return MemberID{
+		value: uid,
+	}, nil
 }
 
 // --- MemberRole
@@ -125,6 +131,19 @@ func (id OrganisationID) WrappedUuid() uuid.UUID {
 	return id.value
 }
 
+func NewOrganisationID(v string) (OrganisationID, error) {
+	id, err := uuid.Parse(v)
+
+	if err != nil {
+		return OrganisationID{}, err
+	}
+
+	return OrganisationID{
+		value: id,
+	}, nil
+
+}
+
 func GenerateOrganisationID() (OrganisationID, error) {
 	id, err := uuid.NewV7()
 
@@ -152,6 +171,19 @@ func (id APIKeyID) Bytes() []byte {
 
 func (id APIKeyID) WrappedUuid() uuid.UUID {
 	return id.value
+}
+
+func NewAPIKeyID(v string) (APIKeyID, error) {
+	id, err := uuid.Parse(v)
+
+	if err != nil {
+		return APIKeyID{}, err
+	}
+
+	return APIKeyID{
+		value: id,
+	}, nil
+
 }
 
 func GenerateAPIKeyID() (APIKeyID, error) {
