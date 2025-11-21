@@ -83,6 +83,16 @@ func NewMember(id MemberID, role MemberRole) Member {
 // --- Members
 type Members []Member
 
+func (m Members) ByID(id MemberID) (Member, bool) {
+	for _, member := range m {
+		if member.ID() == id {
+			return member, true
+		}
+	}
+
+	return Member{}, false
+}
+
 // --- Name
 type Name struct {
 	value string

@@ -21,3 +21,11 @@ VALUES ($1, $2, $3)
 ON CONFLICT (organisation_id, member_id)
 DO UPDATE
 SET "role" = EXCLUDED.role;
+
+-- name: GetOrganisationsForMember :many
+SELECT
+    o.*
+FROM organisations o 
+INNER JOIN organisation_members om
+    ON o.id=om.organisation_id
+WHERE om.member_id = $1;

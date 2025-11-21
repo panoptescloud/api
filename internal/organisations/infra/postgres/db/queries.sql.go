@@ -50,6 +50,49 @@ func (q *Queries) GetOrganisationMembers(ctx context.Context, organisationID pgt
 	return items, nil
 }
 
+const getOrganisationsForMember = `-- name: GetOrganisationsForMember :many
+SELECT
+    id, name, organisation_id, member_id, role
+FROM organisations o 
+INNER JOIN organisation_members om
+    ON o.id=om.organisation_id
+WHERE om.member_id = $1
+`
+
+type GetOrganisationsForMemberRow struct {
+	ID             pgtype.UUID
+	Name           string
+	OrganisationID pgtype.UUID
+	MemberID       pgtype.UUID
+	Role           string
+}
+
+func (q *Queries) GetOrganisationsForMember(ctx context.Context, memberID pgtype.UUID) ([]GetOrganisationsForMemberRow, error) {
+	rows, err := q.db.Query(ctx, getOrganisationsForMember, memberID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetOrganisationsForMemberRow
+	for rows.Next() {
+		var i GetOrganisationsForMemberRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.OrganisationID,
+			&i.MemberID,
+			&i.Role,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const upsertOrganisation = `-- name: UpsertOrganisation :exec
 INSERT INTO organisations (id, name)
 VALUES ($1, $2)

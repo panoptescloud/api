@@ -11,6 +11,7 @@ type userBridge interface {
 
 type organisationQueryRepo interface {
 	ByID(id domain.OrganisationID) (*domain.Organisation, error)
+	ForMember(id domain.MemberID) ([]*domain.Organisation, error)
 }
 
 type OrganisationQueryHandler struct {
@@ -51,10 +52,11 @@ type organisationRepo interface {
 
 func RegisterToBus(b *bus.Bus, r organisationRepo, ub userBridge) error {
 	cmdHandler := NewOrganisationCmdHandler(r, ub)
-	_ = NewOrganisationQueryHandler(r)
+	queryHandler := NewOrganisationQueryHandler(r)
 
 	bus.RegisterCommand(b, cmdHandler.Create)
-	// bus.RegisterQuery(b, queryHandler.GetOrganisationByGithubNodeID)
+	bus.RegisterQuery(b, queryHandler.GetByID)
+	bus.RegisterQuery(b, queryHandler.GetAllForMember)
 
 	return nil
 }

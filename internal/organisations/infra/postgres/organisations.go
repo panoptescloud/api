@@ -67,6 +67,65 @@ func (u *OrganisationsRepository) ByID(id domain.OrganisationID) (*domain.Organi
 	)
 }
 
+func (u *OrganisationsRepository) ForMember(id domain.MemberID) ([]*domain.Organisation, error) {
+	queries := db.New(u.p)
+
+	pgMemberID := pgtype.UUID{
+		Bytes: [16]byte(id.Bytes()),
+		Valid: true,
+	}
+
+	dbOrgs, err := queries.GetOrganisationsForMember(context.TODO(), pgMemberID)
+
+	if err != nil {
+		if err == pgx.ErrNoRows {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	orgs := make([]*domain.Organisation, len(dbOrgs))
+
+	for _, dbO := range dbOrgs {
+		dbMembers, err := queries.GetOrganisationMembers(context.TODO(), dbO.ID)
+
+		if err != nil {
+			if err == pgx.ErrNoRows {
+				// TODO: better error, it shouldn't be possible
+				return nil, errors.New("no members in organisation")
+			}
+
+			return nil, err
+		}
+
+		members := make(domain.Members, len(dbMembers))
+
+		for i, dbM := range dbMembers {
+			m, err := domain.HydrateMember(
+				dbM.MemberID.String(),
+				dbM.Role,
+			)
+
+			if err != nil {
+				//TODO: better error
+				return nil, err
+			}
+
+			members[i] = m
+		}
+
+		o, err := domain.HydrateOrganisation(dbO.ID.String(), dbO.Name, members)
+		if err != nil {
+			return nil, err
+		}
+
+		orgs = append(orgs, o)
+	}
+
+	return orgs, nil
+}
+
 func (u *OrganisationsRepository) Save(org *domain.Organisation) error {
 	tx, err := u.p.BeginTx(context.TODO(), pgx.TxOptions{})
 	if err != nil {

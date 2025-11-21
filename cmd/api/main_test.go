@@ -63,9 +63,10 @@ func setupServer(t *testing.T, appCfg *config.Config) testapp {
 	pool := postgrestest.PrepareDBForTest(t, sharedPool, true)
 
 	sm := http_mocks.NewMockSessionManager(t)
+	al := http_mocks.NewMockActorLoader(t)
 	l, _ := slogtest.NewLogger()
 
-	srv := http.NewServer(sm, l)
+	srv := http.NewServer(sm, al, l)
 
 	b := bus.New()
 	ghOauthClient := github_oauth.NewClient(

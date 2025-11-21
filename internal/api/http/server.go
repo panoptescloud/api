@@ -11,13 +11,19 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 	"github.com/danielgtaylor/huma/v2/adapters/humaecho"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/panoptescloud/api/internal/api/http/operations"
+	"github.com/panoptescloud/api/internal/common/dto"
 )
 
 type sessionManager interface {
 	VerifyJWT(tokenString string) (*jwt.Token, error)
+}
+
+type actorLoader interface {
+	ById(id uuid.UUID) (*dto.Actor, error)
 }
 
 type Controller interface {
@@ -158,6 +164,7 @@ type Server struct {
 	echo           *echo.Echo
 	logger         *slog.Logger
 	sessionManager sessionManager
+	al             actorLoader
 }
 
 // TODO: account for multiple calls to initialise
@@ -205,7 +212,7 @@ func (srv *Server) Initialise(controllers []Controller) {
 		},
 	}
 	hg := humaecho.NewWithGroup(srv.echo, api, apiCfg)
-	hg.UseMiddleware(NewAuthMiddleware(hg, srv.sessionManager))
+	hg.UseMiddleware(srv.NewAuthMiddleware(hg))
 
 	hg.OpenAPI().OnAddOperation = append(
 		hg.OpenAPI().OnAddOperation,
@@ -276,8 +283,9 @@ func requiresCSRFToken(ctx huma.Context) bool {
 	return !methodsWithoutCSRF[ctx.Method()] && requiresAuthToken(ctx)
 }
 
-func NewAuthMiddleware(api huma.API, jwtService sessionManager) func(ctx huma.Context, next func(huma.Context)) {
+func (srv *Server) NewAuthMiddleware(api huma.API) func(ctx huma.Context, next func(huma.Context)) {
 	return func(ctx huma.Context, next func(huma.Context)) {
+		var loadedJWT *jwt.Token
 		authTokenRequired := requiresAuthToken(ctx)
 		refreshTokenRequired := requiresRefreshToken(ctx)
 		csrfTokenRequired := requiresCSRFToken(ctx)
@@ -294,10 +302,36 @@ func NewAuthMiddleware(api huma.API, jwtService sessionManager) func(ctx huma.Co
 				huma.WriteErr(api, ctx, http.StatusUnauthorized, "Unauthorized")
 				return
 			}
-			if _, err := jwtService.VerifyJWT(authCookie.Value); err != nil {
+			loadedJWT, err = srv.sessionManager.VerifyJWT(authCookie.Value)
+			if err != nil {
 				huma.WriteErr(api, ctx, http.StatusUnauthorized, "Unauthorized")
 				return
 			}
+
+			subject, err := loadedJWT.Claims.GetSubject()
+
+			if err != nil {
+				srv.logger.Warn("jwt claims missing subject")
+				huma.WriteErr(api, ctx, http.StatusUnauthorized, "Unauthorized")
+				return
+			}
+
+			uid, err := uuid.Parse(subject)
+
+			if err != nil {
+				srv.logger.Warn("failed to parse subject id as uuid from jwt claim")
+				huma.WriteErr(api, ctx, http.StatusUnauthorized, "Unauthorized")
+				return
+			}
+			actor, err := srv.al.ById(uid)
+
+			if err != nil {
+				srv.logger.Warn("failed to load actor")
+				huma.WriteErr(api, ctx, http.StatusUnauthorized, "Unauthorized")
+				return
+			}
+
+			ctx = huma.WithValue(ctx, "actor", actor)
 		}
 
 		if csrfTokenRequired {
@@ -322,9 +356,10 @@ func NewAuthMiddleware(api huma.API, jwtService sessionManager) func(ctx huma.Co
 	}
 }
 
-func NewServer(sessionManager sessionManager, logger *slog.Logger) *Server {
+func NewServer(sessionManager sessionManager, al actorLoader, logger *slog.Logger) *Server {
 	return &Server{
 		logger:         logger,
 		sessionManager: sessionManager,
+		al:             al,
 	}
 }

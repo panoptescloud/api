@@ -12,8 +12,6 @@ func (cmd GetUserByID) GetName() string {
 	return "users.query.check_user_exists"
 }
 
-func (uh *UserQueryHandler) GetUserByID(dto GetUserByID) (bool, error) {
-	u, err := uh.userRepo.ByID(dto.ID)
-
-	return u != nil, err
+func (uh *UserQueryHandler) GetUserByID(dto GetUserByID) (*domain.User, error) {
+	return uh.userRepo.ByID(dto.ID)
 }

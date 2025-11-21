@@ -40,3 +40,9 @@ func (b UsersBridge) UserExists(id domain.MemberID) (bool, error) {
 
 	return user != nil, err
 }
+
+func NewUsersBridge(b *bus.Bus) *UsersBridge {
+	return &UsersBridge{
+		bus: b,
+	}
+}

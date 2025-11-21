@@ -19,6 +19,7 @@ import (
 func handleServe(_ *cobra.Command, _ []string) error {
 	api := http.NewServer(
 		svcContainer.GetSessionManager(),
+		svcContainer.GetActorLoader(),
 		logger.With("component", "http-server"),
 	)
 
@@ -34,6 +35,9 @@ func handleServe(_ *cobra.Command, _ []string) error {
 			),
 			svcContainer.GetSessionManager(),
 			logger.With("component", "auth-controller.v1beta"),
+		),
+		v1beta.NewOrganisationsController(
+			globalBus,
 		),
 	}
 
