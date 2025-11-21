@@ -21,6 +21,16 @@ type Organisation struct {
 	Name string
 }
 
+type OrganisationApiKey struct {
+	ID pgtype.UUID
+	// The ID of the organisation to which api key belongs.
+	OrganisationID pgtype.UUID
+	// Simply a reference to keep track of the different API keys that may be created. Must be unique across the organisation.
+	Name string
+	// The token that is used for access; this will be encrypted and useless outside of the application code.
+	Token string
+}
+
 type OrganisationMember struct {
 	// The ID of the organisation to which this membership applies.
 	OrganisationID pgtype.UUID

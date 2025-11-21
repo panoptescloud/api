@@ -23,7 +23,7 @@ type sessionManager interface {
 }
 
 type actorLoader interface {
-	ById(id uuid.UUID) (*dto.Actor, error)
+	ByUserID(id uuid.UUID) (*dto.Actor, error)
 }
 
 type Controller interface {
@@ -323,7 +323,7 @@ func (srv *Server) NewAuthMiddleware(api huma.API) func(ctx huma.Context, next f
 				huma.WriteErr(api, ctx, http.StatusUnauthorized, "Unauthorized")
 				return
 			}
-			actor, err := srv.al.ById(uid)
+			actor, err := srv.al.ByUserID(uid)
 
 			if err != nil {
 				srv.logger.Warn("failed to load actor")

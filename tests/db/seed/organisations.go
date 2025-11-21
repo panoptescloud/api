@@ -21,3 +21,11 @@ func Organisation(pool *pgxpool.Pool, id uuid.UUID, name string, memberID uuid.U
 
 	return err
 }
+
+func OrganisationAPIKey(pool *pgxpool.Pool, id uuid.UUID, orgID uuid.UUID, name string, token string) error {
+	_, err := pool.Exec(context.Background(), `
+		INSERT INTO organisation_api_keys (id, organisation_id, name, token) VALUES ($1, $2, $3, $4);
+	`, id, orgID, name, token)
+
+	return err
+}

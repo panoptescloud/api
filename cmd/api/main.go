@@ -34,6 +34,7 @@ type services struct {
 	postgresPool            *pgxpool.Pool
 	usersRepo               *userspostgres.UsersRepository
 	organisationsRepo       *organisationspostgres.OrganisationsRepository
+	organisationAPIKeysRepo *organisationspostgres.APIKeysRepository
 	sessionManager          *auth.SessionManager
 	actorLoader             *auth.ActorLoader
 	authOrganisationsBridge *organisations.OrganisationsBridge
@@ -92,6 +93,18 @@ func (s *services) GetOrganisationsRepo() *organisationspostgres.OrganisationsRe
 	)
 
 	return s.organisationsRepo
+}
+
+func (s *services) GetOrganisationAPIKeysRepo() *organisationspostgres.APIKeysRepository {
+	if s.organisationAPIKeysRepo != nil {
+		return s.organisationAPIKeysRepo
+	}
+
+	s.organisationAPIKeysRepo = organisationspostgres.NewAPIKeysRepository(
+		s.GetPostgresPool(),
+	)
+
+	return s.organisationAPIKeysRepo
 }
 
 func (s *services) GetRefreshTokensRepo() *postgres.RefreshTokensRepository {

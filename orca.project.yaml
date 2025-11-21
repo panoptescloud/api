@@ -51,9 +51,17 @@ extensions:
   service: "migrate"
   command: "up"
 
+- name: "migrate:down"
+  service: "migrate"
+  command: "down"
+
 - name: "migrate:wipe"
   service: "migrate"
   command: "drop"
+
+- name: "migrate:force"
+  service: "migrate"
+  command: "force"
 
 - name: "sqlc"
   service: "app"

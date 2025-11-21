@@ -22,6 +22,7 @@ func buildCommandBus() *bus.Bus {
 		organisationsapp.RegisterToBus(
 			globalBus,
 			svcContainer.GetOrganisationsRepo(),
+			svcContainer.GetOrganisationAPIKeysRepo(),
 			organisation_users.NewUsersBridge(globalBus),
 		),
 	)

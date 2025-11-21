@@ -37,12 +37,12 @@ func (_m *MockActorLoader) EXPECT() *MockActorLoader_Expecter {
 	return &MockActorLoader_Expecter{mock: &_m.Mock}
 }
 
-// ById provides a mock function for the type MockActorLoader
-func (_mock *MockActorLoader) ById(id uuid.UUID) (*dto.Actor, error) {
+// ByUserID provides a mock function for the type MockActorLoader
+func (_mock *MockActorLoader) ByUserID(id uuid.UUID) (*dto.Actor, error) {
 	ret := _mock.Called(id)
 
 	if len(ret) == 0 {
-		panic("no return value specified for ById")
+		panic("no return value specified for ByUserID")
 	}
 
 	var r0 *dto.Actor
@@ -65,18 +65,18 @@ func (_mock *MockActorLoader) ById(id uuid.UUID) (*dto.Actor, error) {
 	return r0, r1
 }
 
-// MockActorLoader_ById_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ById'
-type MockActorLoader_ById_Call struct {
+// MockActorLoader_ByUserID_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ByUserID'
+type MockActorLoader_ByUserID_Call struct {
 	*mock.Call
 }
 
-// ById is a helper method to define mock.On call
+// ByUserID is a helper method to define mock.On call
 //   - id uuid.UUID
-func (_e *MockActorLoader_Expecter) ById(id interface{}) *MockActorLoader_ById_Call {
-	return &MockActorLoader_ById_Call{Call: _e.mock.On("ById", id)}
+func (_e *MockActorLoader_Expecter) ByUserID(id interface{}) *MockActorLoader_ByUserID_Call {
+	return &MockActorLoader_ByUserID_Call{Call: _e.mock.On("ByUserID", id)}
 }
 
-func (_c *MockActorLoader_ById_Call) Run(run func(id uuid.UUID)) *MockActorLoader_ById_Call {
+func (_c *MockActorLoader_ByUserID_Call) Run(run func(id uuid.UUID)) *MockActorLoader_ByUserID_Call {
 	_c.Call.Run(func(args mock.Arguments) {
 		var arg0 uuid.UUID
 		if args[0] != nil {
@@ -89,12 +89,12 @@ func (_c *MockActorLoader_ById_Call) Run(run func(id uuid.UUID)) *MockActorLoade
 	return _c
 }
 
-func (_c *MockActorLoader_ById_Call) Return(actor *dto.Actor, err error) *MockActorLoader_ById_Call {
+func (_c *MockActorLoader_ByUserID_Call) Return(actor *dto.Actor, err error) *MockActorLoader_ByUserID_Call {
 	_c.Call.Return(actor, err)
 	return _c
 }
 
-func (_c *MockActorLoader_ById_Call) RunAndReturn(run func(id uuid.UUID) (*dto.Actor, error)) *MockActorLoader_ById_Call {
+func (_c *MockActorLoader_ByUserID_Call) RunAndReturn(run func(id uuid.UUID) (*dto.Actor, error)) *MockActorLoader_ByUserID_Call {
 	_c.Call.Return(run)
 	return _c
 }

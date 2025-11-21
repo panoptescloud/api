@@ -29,3 +29,17 @@ FROM organisations o
 INNER JOIN organisation_members om
     ON o.id=om.organisation_id
 WHERE om.member_id = $1;
+
+-- name: UpsertAPIKey :exec
+INSERT INTO organisation_api_keys (id, organisation_id, name, token)
+VALUES ($1, $2, $3, $4)
+ON CONFLICT (id)
+DO UPDATE
+-- name is the only property that may be updated after creation
+SET name = EXCLUDED.name;
+
+-- name: APIKeyByToken :one
+SELECT
+    *
+FROM organisation_api_keys oak
+WHERE oak.token=$1;

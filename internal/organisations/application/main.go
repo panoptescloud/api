@@ -25,7 +25,7 @@ func NewOrganisationQueryHandler(organisationRepo organisationQueryRepo) *Organi
 }
 
 type organisationValidationRepo interface {
-	// TODO: add methods required
+	ByID(id domain.OrganisationID) (*domain.Organisation, error)
 }
 
 type organisationCmdRepo interface {
@@ -33,14 +33,25 @@ type organisationCmdRepo interface {
 	Save(*domain.Organisation) error
 }
 
+type apiKeyValidationRepo interface {
+	// Nothing yet
+}
+
+type apiKeyCmdRepo interface {
+	apiKeyValidationRepo
+	Save(*domain.APIKey) error
+}
+
 type OrganisationCmdHandler struct {
 	organisationRepo organisationCmdRepo
+	apiKeyRepo       apiKeyCmdRepo
 	userBridge       userBridge
 }
 
-func NewOrganisationCmdHandler(organisationRepo organisationCmdRepo, ub userBridge) *OrganisationCmdHandler {
+func NewOrganisationCmdHandler(organisationRepo organisationCmdRepo, apiKeyRepo apiKeyCmdRepo, ub userBridge) *OrganisationCmdHandler {
 	return &OrganisationCmdHandler{
 		organisationRepo: organisationRepo,
+		apiKeyRepo:       apiKeyRepo,
 		userBridge:       ub,
 	}
 }
@@ -50,11 +61,16 @@ type organisationRepo interface {
 	organisationCmdRepo
 }
 
-func RegisterToBus(b *bus.Bus, r organisationRepo, ub userBridge) error {
-	cmdHandler := NewOrganisationCmdHandler(r, ub)
+type apiKeyRepo interface {
+	apiKeyCmdRepo
+}
+
+func RegisterToBus(b *bus.Bus, r organisationRepo, apiKeyRepo apiKeyRepo, ub userBridge) error {
+	cmdHandler := NewOrganisationCmdHandler(r, apiKeyRepo, ub)
 	queryHandler := NewOrganisationQueryHandler(r)
 
 	bus.RegisterCommand(b, cmdHandler.Create)
+	bus.RegisterCommand(b, cmdHandler.CreateAPIKey)
 	bus.RegisterQuery(b, queryHandler.GetByID)
 	bus.RegisterQuery(b, queryHandler.GetAllForMember)
 

@@ -18,8 +18,18 @@ type ActorLoader struct {
 	usersBridge usersBridge
 }
 
-func (al *ActorLoader) ById(id uuid.UUID) (*dto.Actor, error) {
+func (al *ActorLoader) ByUserID(id uuid.UUID) (*dto.Actor, error) {
 	return al.usersBridge.ByID(id)
+}
+
+func (al *ActorLoader) ByApiKeyID(id uuid.UUID) (*dto.Actor, error) {
+	id, err := uuid.NewV7()
+
+	if err != nil {
+		return nil, err
+	}
+
+	return dto.NewAPIKeyActor(id), nil
 }
 
 func NewActorLoader(orgsBridge organisationsBridge, usersBridge usersBridge) *ActorLoader {

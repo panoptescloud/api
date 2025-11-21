@@ -27,7 +27,7 @@ func (a *UsersBridge) ByID(id uuid.UUID) (*dto.Actor, error) {
 		return nil, err
 	}
 
-	return dto.NewActor(u.ID().WrappedUuid()), nil
+	return dto.NewUserActor(u.ID().WrappedUuid()), nil
 }
 
 func NewUsersBridge(b *bus.Bus) *UsersBridge {

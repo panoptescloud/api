@@ -77,7 +77,7 @@ func (c *OrganisationsController) Create(ctx context.Context, req *CreateOrganis
 	err = bus.Dispatch(c.bus, application.CreateOrganisation{
 		ID:    id,
 		Name:  req.Body.Name,
-		Owner: domain.NewMemberID(actor.UserID()),
+		Owner: domain.NewMemberID(*actor.UserID()),
 	})
 
 	if err != nil {

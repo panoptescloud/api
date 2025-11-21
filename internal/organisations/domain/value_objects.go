@@ -136,3 +136,47 @@ func GenerateOrganisationID() (OrganisationID, error) {
 		value: id,
 	}, nil
 }
+
+// --- APIKeyID
+type APIKeyID struct {
+	value uuid.UUID
+}
+
+func (id APIKeyID) String() string {
+	return id.value.String()
+}
+
+func (id APIKeyID) Bytes() []byte {
+	return id.value[:]
+}
+
+func (id APIKeyID) WrappedUuid() uuid.UUID {
+	return id.value
+}
+
+func GenerateAPIKeyID() (APIKeyID, error) {
+	id, err := uuid.NewV7()
+
+	if err != nil {
+		return APIKeyID{}, err
+	}
+
+	return APIKeyID{
+		value: id,
+	}, nil
+}
+
+// --- APIKeyName
+type APIKeyName struct {
+	value string
+}
+
+func (n APIKeyName) String() string {
+	return n.value
+}
+
+func NewAPIKeyName(name string) APIKeyName {
+	return APIKeyName{
+		value: name,
+	}
+}
