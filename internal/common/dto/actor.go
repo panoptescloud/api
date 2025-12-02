@@ -5,8 +5,8 @@ import "github.com/google/uuid"
 type ActorType string
 
 var (
-	APIKeyActor ActorType = "api_key"
-	UserActor   ActorType = "user"
+	OrganisationAPIKeyActor ActorType = "organisation_api_key"
+	UserActor               ActorType = "user"
 )
 
 // --- Actor
@@ -58,9 +58,9 @@ func NewUserActor(id uuid.UUID) *Actor {
 	}
 }
 
-func NewAPIKeyActor(id uuid.UUID) *Actor {
+func NewOrganisationAPIKeyActor(id uuid.UUID) *Actor {
 	return &Actor{
 		apiKeyID:  &id,
-		actorType: APIKeyActor,
+		actorType: OrganisationAPIKeyActor,
 	}
 }

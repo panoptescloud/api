@@ -215,6 +215,10 @@ func (c *OrganisationsController) List(ctx context.Context, req *ListOrganisatio
 		return nil, errors.New("failed to load actor, could not assert type")
 	}
 
+	if actor.Type() != dto.UserActor {
+		return nil, common.ErrUnauthorised{}
+	}
+
 	id, err := domain.NewMemberID(actor.UserID().String())
 
 	if err != nil {

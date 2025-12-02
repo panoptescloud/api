@@ -7,6 +7,7 @@ import (
 
 type organisationsBridge interface {
 	LoadByUserID(userID uuid.UUID) ([]dto.ActorOrganisation, error)
+	GetApiKeyByToken(token string) (*dto.Actor, error)
 }
 
 type usersBridge interface {
@@ -22,14 +23,19 @@ func (al *ActorLoader) ByUserID(id uuid.UUID) (*dto.Actor, error) {
 	return al.usersBridge.ByID(id)
 }
 
-func (al *ActorLoader) ByApiKeyID(id uuid.UUID) (*dto.Actor, error) {
-	id, err := uuid.NewV7()
+func (al *ActorLoader) ByApiKey(token string) (*dto.Actor, error) {
+	apiKey, err := al.orgsBridge.GetApiKeyByToken(token)
 
 	if err != nil {
 		return nil, err
 	}
 
-	return dto.NewAPIKeyActor(id), nil
+	if apiKey != nil {
+		return apiKey, nil
+	}
+
+	// TODO: later will authorise against user api keys as well as org api keys
+	return nil, nil
 }
 
 func NewActorLoader(orgsBridge organisationsBridge, usersBridge usersBridge) *ActorLoader {

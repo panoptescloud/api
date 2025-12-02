@@ -2,6 +2,7 @@ package application
 
 import (
 	"github.com/panoptescloud/api/internal/common/bus"
+	"github.com/panoptescloud/api/internal/common/dto"
 	"github.com/panoptescloud/api/internal/organisations/domain"
 )
 
@@ -37,6 +38,7 @@ type organisationCmdRepo interface {
 
 type apiKeyQueryRepo interface {
 	ByID(domain.APIKeyID) (*domain.APIKey, error)
+	ByToken(token dto.HashedValue) (*domain.APIKey, error)
 	AllForOrganisation(domain.OrganisationID) ([]*domain.APIKey, error)
 }
 
@@ -83,6 +85,7 @@ func RegisterToBus(b *bus.Bus, r organisationRepo, apiKeyRepo apiKeyRepo, ub use
 	bus.RegisterQuery(b, queryHandler.GetByID)
 	bus.RegisterQuery(b, queryHandler.GetAllForMember)
 	bus.RegisterQuery(b, queryHandler.GetAPIKeyByID)
+	bus.RegisterQuery(b, queryHandler.GetOrganisationAPIKeyByToken)
 	bus.RegisterQuery(b, queryHandler.GetAPIKeysForOrganisation)
 
 	return nil

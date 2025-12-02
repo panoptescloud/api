@@ -37,6 +37,68 @@ func (_m *MockActorLoader) EXPECT() *MockActorLoader_Expecter {
 	return &MockActorLoader_Expecter{mock: &_m.Mock}
 }
 
+// ByApiKey provides a mock function for the type MockActorLoader
+func (_mock *MockActorLoader) ByApiKey(token string) (*dto.Actor, error) {
+	ret := _mock.Called(token)
+
+	if len(ret) == 0 {
+		panic("no return value specified for ByApiKey")
+	}
+
+	var r0 *dto.Actor
+	var r1 error
+	if returnFunc, ok := ret.Get(0).(func(string) (*dto.Actor, error)); ok {
+		return returnFunc(token)
+	}
+	if returnFunc, ok := ret.Get(0).(func(string) *dto.Actor); ok {
+		r0 = returnFunc(token)
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(*dto.Actor)
+		}
+	}
+	if returnFunc, ok := ret.Get(1).(func(string) error); ok {
+		r1 = returnFunc(token)
+	} else {
+		r1 = ret.Error(1)
+	}
+	return r0, r1
+}
+
+// MockActorLoader_ByApiKey_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'ByApiKey'
+type MockActorLoader_ByApiKey_Call struct {
+	*mock.Call
+}
+
+// ByApiKey is a helper method to define mock.On call
+//   - token string
+func (_e *MockActorLoader_Expecter) ByApiKey(token interface{}) *MockActorLoader_ByApiKey_Call {
+	return &MockActorLoader_ByApiKey_Call{Call: _e.mock.On("ByApiKey", token)}
+}
+
+func (_c *MockActorLoader_ByApiKey_Call) Run(run func(token string)) *MockActorLoader_ByApiKey_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		var arg0 string
+		if args[0] != nil {
+			arg0 = args[0].(string)
+		}
+		run(
+			arg0,
+		)
+	})
+	return _c
+}
+
+func (_c *MockActorLoader_ByApiKey_Call) Return(actor *dto.Actor, err error) *MockActorLoader_ByApiKey_Call {
+	_c.Call.Return(actor, err)
+	return _c
+}
+
+func (_c *MockActorLoader_ByApiKey_Call) RunAndReturn(run func(token string) (*dto.Actor, error)) *MockActorLoader_ByApiKey_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // ByUserID provides a mock function for the type MockActorLoader
 func (_mock *MockActorLoader) ByUserID(id uuid.UUID) (*dto.Actor, error) {
 	ret := _mock.Called(id)

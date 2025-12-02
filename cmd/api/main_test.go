@@ -66,7 +66,7 @@ func setupServer(t *testing.T, appCfg *config.Config) testapp {
 	al := http_mocks.NewMockActorLoader(t)
 	l, _ := slogtest.NewLogger()
 
-	srv := http.NewServer(sm, al, l)
+	srv := http.NewServer(sm, al, l, l)
 
 	b := bus.New()
 	ghOauthClient := github_oauth.NewClient(

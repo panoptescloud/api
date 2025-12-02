@@ -47,6 +47,22 @@ func (a *OrganisationsBridge) LoadByUserID(userID uuid.UUID) ([]dto.ActorOrganis
 	return ao, nil
 }
 
+func (a *OrganisationsBridge) GetApiKeyByToken(token string) (*dto.Actor, error) {
+	apiKey, err := bus.RunQuery[application.GetOrganisationAPIKeyByToken, *domain.APIKey](a.bus, application.GetOrganisationAPIKeyByToken{
+		Token: token,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	if apiKey != nil {
+		return dto.NewOrganisationAPIKeyActor(apiKey.ID().WrappedUuid()), nil
+	}
+
+	return nil, nil
+}
+
 func NewOrganisationsBridge(b *bus.Bus) *OrganisationsBridge {
 	return &OrganisationsBridge{
 		bus: b,
