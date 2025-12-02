@@ -25,3 +25,4 @@ packages:
         interfaces:
             # select the interfaces you want mocked
             sessionManager:
+            actorLoader:

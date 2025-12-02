@@ -34,8 +34,8 @@ func NewProbesController() *ProbesController {
 	return &ProbesController{}
 }
 
-func (c *ProbesController) Startup(ctx context.Context, req *StartupRequest) (*responses.NoContent, error) {
-	return &responses.NoContent{
+func (c *ProbesController) Startup(ctx context.Context, req *StartupRequest) (*responses.Empty, error) {
+	return &responses.Empty{
 		Status: http.StatusNoContent,
 	}, nil
 }

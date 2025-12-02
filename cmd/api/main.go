@@ -13,7 +13,10 @@ import (
 	"github.com/panoptescloud/api/internal/infra/config"
 	"github.com/panoptescloud/api/internal/infra/github_oauth"
 	"github.com/panoptescloud/api/internal/infra/hasher"
+	"github.com/panoptescloud/api/internal/infra/organisations"
 	"github.com/panoptescloud/api/internal/infra/repository/postgres"
+	authUsers "github.com/panoptescloud/api/internal/infra/users"
+	organisationspostgres "github.com/panoptescloud/api/internal/organisations/infra/postgres"
 	userspostgres "github.com/panoptescloud/api/internal/users/infra/postgres"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -27,12 +30,17 @@ var svcContainer *services = &services{}
 var ErrInvalidOptions = errors.New("invalid options provided")
 
 type services struct {
-	githubOauthClient *github_oauth.Client
-	postgresPool      *pgxpool.Pool
-	usersRepo         *userspostgres.UsersRepository
-	sessionManager    *auth.SessionManager
-	refreshTokensRepo *postgres.RefreshTokensRepository
-	hasher            *hasher.HMACSHA256Hasher
+	githubOauthClient       *github_oauth.Client
+	postgresPool            *pgxpool.Pool
+	usersRepo               *userspostgres.UsersRepository
+	organisationsRepo       *organisationspostgres.OrganisationsRepository
+	organisationAPIKeysRepo *organisationspostgres.APIKeysRepository
+	sessionManager          *auth.SessionManager
+	actorLoader             *auth.ActorLoader
+	authOrganisationsBridge *organisations.OrganisationsBridge
+	authUsersBridge         *authUsers.UsersBridge
+	refreshTokensRepo       *postgres.RefreshTokensRepository
+	hasher                  *hasher.HMACSHA256Hasher
 }
 
 func (s *services) GetGituhbOauthClient() *github_oauth.Client {
@@ -75,6 +83,30 @@ func (s *services) GetUsersRepo() *userspostgres.UsersRepository {
 	return s.usersRepo
 }
 
+func (s *services) GetOrganisationsRepo() *organisationspostgres.OrganisationsRepository {
+	if s.organisationsRepo != nil {
+		return s.organisationsRepo
+	}
+
+	s.organisationsRepo = organisationspostgres.NewOrganisationsRepository(
+		s.GetPostgresPool(),
+	)
+
+	return s.organisationsRepo
+}
+
+func (s *services) GetOrganisationAPIKeysRepo() *organisationspostgres.APIKeysRepository {
+	if s.organisationAPIKeysRepo != nil {
+		return s.organisationAPIKeysRepo
+	}
+
+	s.organisationAPIKeysRepo = organisationspostgres.NewAPIKeysRepository(
+		s.GetPostgresPool(),
+	)
+
+	return s.organisationAPIKeysRepo
+}
+
 func (s *services) GetRefreshTokensRepo() *postgres.RefreshTokensRepository {
 	if s.refreshTokensRepo != nil {
 		return s.refreshTokensRepo
@@ -87,7 +119,7 @@ func (s *services) GetRefreshTokensRepo() *postgres.RefreshTokensRepository {
 	return s.refreshTokensRepo
 }
 
-func (s *services) GetHasher() *hasher.HMACSHA256Hasher {
+func (s *services) GetAuthHasher() *hasher.HMACSHA256Hasher {
 	if s.hasher != nil {
 		return s.hasher
 	}
@@ -106,7 +138,7 @@ func (s *services) GetSessionManager() *auth.SessionManager {
 
 	svc, err := auth.NewSessionManager(
 		s.GetRefreshTokensRepo(),
-		s.GetHasher(),
+		s.GetAuthHasher(),
 		appCfg.GetAuthJWTPrivateKeyPath(),
 		appCfg.GetAuthJWTPublicKeyPath(),
 	)
@@ -116,6 +148,39 @@ func (s *services) GetSessionManager() *auth.SessionManager {
 	s.sessionManager = svc
 
 	return s.sessionManager
+}
+
+func (s *services) GetAuthOrganisationsBridge() *organisations.OrganisationsBridge {
+	if s.authOrganisationsBridge != nil {
+		return s.authOrganisationsBridge
+	}
+
+	s.authOrganisationsBridge = organisations.NewOrganisationsBridge(globalBus)
+
+	return s.authOrganisationsBridge
+}
+
+func (s *services) GetAuthUsersBridge() *authUsers.UsersBridge {
+	if s.authUsersBridge != nil {
+		return s.authUsersBridge
+	}
+
+	s.authUsersBridge = authUsers.NewUsersBridge(globalBus)
+
+	return s.authUsersBridge
+}
+
+func (s *services) GetActorLoader() *auth.ActorLoader {
+	if s.actorLoader != nil {
+		return s.actorLoader
+	}
+
+	s.actorLoader = auth.NewActorLoader(
+		s.GetAuthOrganisationsBridge(),
+		s.GetAuthUsersBridge(),
+	)
+
+	return s.actorLoader
 }
 
 func handleGroupedCommand(cmd *cobra.Command, args []string) error {

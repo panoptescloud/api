@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"log/slog"
 	"os"
 	"os/signal"
 	"syscall"
@@ -17,9 +18,27 @@ import (
 )
 
 func handleServe(_ *cobra.Command, _ []string) error {
+	opts := &slog.HandlerOptions{
+		AddSource: false,
+		Level:     slog.LevelInfo,
+		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
+			// Remove the msg field, we don't want it in access logs
+			if a.Key == "msg" {
+				return slog.Attr{}
+			}
+
+			return a
+		},
+	}
+
+	accessLogger := slog.New(slog.NewJSONHandler(os.Stdout, opts))
+	accessLogger = accessLogger.With("source", "access_log")
+
 	api := http.NewServer(
 		svcContainer.GetSessionManager(),
+		svcContainer.GetActorLoader(),
 		logger.With("component", "http-server"),
+		accessLogger,
 	)
 
 	controllers := []http.Controller{
@@ -35,6 +54,10 @@ func handleServe(_ *cobra.Command, _ []string) error {
 			svcContainer.GetSessionManager(),
 			logger.With("component", "auth-controller.v1beta"),
 		),
+		v1beta.NewOrganisationsController(
+			globalBus,
+		),
+		v1beta.NewOrganisationAPIKeysController(globalBus, svcContainer.GetAuthHasher()),
 	}
 
 	api.Initialise(controllers)

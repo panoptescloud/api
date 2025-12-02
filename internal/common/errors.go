@@ -20,14 +20,28 @@ func (err ErrUnauthorised) Error() string {
 	return "the current user is not authorized to perform this action"
 }
 
+// TODO: the errors below here should be in the relevant domain, not common!
+
 type ErrEmailAlreadyInUse struct{}
 
 func (err ErrEmailAlreadyInUse) Error() string {
 	return "the chosen email is already in use"
 }
 
-type ErrMustHaveVerfiiedEmailAddress struct{}
+type ErrOrganisationNameAlreadyInUse struct{}
 
-func (err ErrMustHaveVerfiiedEmailAddress) Error() string {
+func (err ErrOrganisationNameAlreadyInUse) Error() string {
+	return "the chosen organisation name is already in use"
+}
+
+type ErrMustHaveVerfiedEmailAddress struct{}
+
+func (err ErrMustHaveVerfiedEmailAddress) Error() string {
 	return "the user must have a verified email address in the external oauth provider"
+}
+
+type ErrResourceNotFound struct{}
+
+func (err ErrResourceNotFound) Error() string {
+	return "resource not found"
 }

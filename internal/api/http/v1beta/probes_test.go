@@ -16,7 +16,7 @@ func Test_ProbesController_Startup(t *testing.T) {
 	resp, err := c.Startup(context.TODO(), &v1beta.StartupRequest{})
 
 	assert.Nil(t, err)
-	assert.Equal(t, &responses.NoContent{
+	assert.Equal(t, &responses.Empty{
 		Status: http.StatusNoContent,
 	}, resp)
 }
